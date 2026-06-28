@@ -62,7 +62,9 @@ export function WyroczniaFlow() {
   const [marginText, setMarginText] = useState("");
   const [marginPublic, setMarginPublic] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [keepLoading, setKeepLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveWarning, setSaveWarning] = useState("");
   const [publicMargins, setPublicMargins] = useState([]);
   const [reactedMarginIds, setReactedMarginIds] = useState(new Set());
   const [chorusLoading, setChorusLoading] = useState(false);
@@ -102,6 +104,10 @@ export function WyroczniaFlow() {
 
   async function handleKeepQuote() {
     const text = marginText.trim();
+    setKeepLoading(true);
+    setError("");
+    setSaveWarning("");
+
     if (text) {
       saveMargin(current.id, text, marginPublic);
     }
@@ -110,9 +116,9 @@ export function WyroczniaFlow() {
     if (isAuthenticated) {
       const collectionResult = await addToCollection(current.id);
       if (!collectionResult.ok) {
-        setError(collectionResult.error);
-        return;
+        setSaveWarning(collectionResult.error);
       }
+
       if (text) {
         const marginResult = await saveMarginDb({
           quoteId: current.id,
@@ -120,12 +126,14 @@ export function WyroczniaFlow() {
           visibility: marginPublic ? "public" : "private",
         });
         if (!marginResult.ok) {
-          setError(marginResult.error);
-          return;
+          setSaveWarning((prev) =>
+            prev ? `${prev} ${marginResult.error}` : marginResult.error
+          );
         }
       }
     }
 
+    setKeepLoading(false);
     setStep("chorus");
   }
 
@@ -175,6 +183,7 @@ export function WyroczniaFlow() {
         setGlosaRevealed(false);
         setMarginText("");
         setMarginPublic(false);
+        setSaveWarning("");
         setStep("quote");
       } catch (err) {
         setError(err.message);
@@ -320,12 +329,22 @@ export function WyroczniaFlow() {
                   </button>
                   <button
                     type="button"
+                    disabled={keepLoading}
                     onClick={() => void handleKeepQuote()}
-                    className="flex-1 rounded-[11px] border border-brass bg-brass px-3 py-2.5 font-sans text-[13px] text-[#fff8ec] transition-all duration-150 hover:bg-brassdeep"
+                    className="flex-1 rounded-[11px] border border-brass bg-brass px-3 py-2.5 font-sans text-[13px] text-[#fff8ec] transition-all duration-150 hover:bg-brassdeep disabled:opacity-60"
                   >
-                    to zostaje ze mną
+                    {keepLoading ? "Zapisuję…" : "to zostaje ze mną"}
                   </button>
                 </div>
+                {error ? (
+                  <p className="mt-2 font-sans text-xs text-tension">{error}</p>
+                ) : null}
+                {saveWarning ? (
+                  <p className="mt-2 font-sans text-xs text-tension">
+                    Zapis w bazie nie powiódł się: {saveWarning}. Cytat jest w
+                    sesji lokalnej.
+                  </p>
+                ) : null}
                 {!isAuthenticated ? (
                   <p className="mt-2 text-center font-sans text-[11px] italic text-mistsoft">
                     Zaloguj się, aby zapisać cytat i margines w bazie.
@@ -372,6 +391,11 @@ export function WyroczniaFlow() {
           {flagged[current.id] ? (
             <p className="mb-2.5 font-sans text-[11.5px] italic text-tension">
               ✓ Zgłoszony do usunięcia — dzięki, to pomaga czyścić korpus.
+            </p>
+          ) : null}
+          {saveWarning ? (
+            <p className="mb-2.5 font-sans text-[11.5px] text-tension">
+              Zapis w bazie nie powiódł się: {saveWarning}
             </p>
           ) : null}
           <p className="py-2 text-center font-serif text-[19px] italic leading-[1.4] text-[#ece6d8]">
