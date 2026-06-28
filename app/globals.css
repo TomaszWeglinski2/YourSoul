@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  Tailwind CSS v4 — konfiguracja motywu żyje tutaj, w bloku @theme
+  (w v4 nie ma osobnego tailwind.config.js). Wartości kolorów wzięte
+  1:1 ze zmiennych :root z prototypu Docs/your-soul-prototyp(3).html.
+*/
+@theme {
+  /* Paleta zmierzch / papier / mosiądz */
+  --color-dusk: #141826;
+  --color-dusk2: #1d2334;
+  --color-page: #f1e9da;
+  --color-page2: #e6dac4;
+  --color-ink: #2b2620;
+  --color-inksoft: #6a6051;
+  --color-brass: #c4995a;
+  --color-brassdeep: #9a7236;
+  --color-tension: #8a93c4;
+  --color-tensiondeep: #5e68a0;
+  --color-mist: #aeb6c9;
+  --color-mistsoft: #717b94;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Rodziny czcionek (zmienne ustawiane przez next/font w layout.js) */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-spectral), Georgia, serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Tło zmierzchu z prototypu */
+  background: radial-gradient(
+    130% 90% at 50% 0%,
+    #20283f 0%,
+    var(--color-dusk) 60%,
+    #0d1017 100%
+  );
+  color: var(--color-mist);
+  -webkit-font-smoothing: antialiased;
 }

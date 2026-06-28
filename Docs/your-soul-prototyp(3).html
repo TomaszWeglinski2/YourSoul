@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Soul — prototyp działający</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dusk:#141826; --dusk2:#1d2334;
+    --page:#f1e9da; --page2:#e6dac4;
+    --ink:#2b2620; --inksoft:#6a6051;
+    --brass:#c4995a; --brassdeep:#9a7236;
+    --tension:#8a93c4; --tensiondeep:#5e68a0;
+    --mist:#aeb6c9; --mistsoft:#717b94;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    background:radial-gradient(130% 90% at 50% 0%, #20283f 0%, var(--dusk) 60%, #0d1017 100%);
+    color:var(--mist); font-family:'Inter',system-ui,sans-serif; min-height:100dvh;
+    display:flex; justify-content:center; -webkit-font-smoothing:antialiased; padding:14px;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin:2px 2px 14px; opacity:.92}
+  .brand{display:flex; align-items:center; gap:9px}
+  .brand .g{width:22px;height:22px;border:1px solid var(--brass);border-radius:50%;display:grid;place-items:center;color:var(--brass);font-family:'Spectral',serif;font-size:12px}
+  .brand .t{font-family:'Spectral',serif;letter-spacing:.16em;text-transform:uppercase;font-size:11px}
+  .brand .t b{color:var(--brass);font-weight:600}
+  .reset{background:none;border:none;color:var(--mistsoft);font-size:10.5px;cursor:pointer;letter-spacing:.05em}
+  .reset:hover{color:var(--brass)}
+
+  .card{background:linear-gradient(180deg,var(--page),var(--page2)); color:var(--ink); border-radius:14px; padding:22px 20px; box-shadow:0 16px 40px -20px rgba(0,0,0,.6); animation:fade .4s ease both}
+  .dark{background:radial-gradient(120% 100% at 50% 25%, #1b2236 0%, #11151f 100%); color:var(--mist); box-shadow:inset 0 0 60px rgba(0,0,0,.5)}
+  @keyframes fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .kick{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brassdeep);margin-bottom:12px}
+  .kick.l{color:var(--brass)}
+  h1.title{font-family:'Spectral',serif;font-weight:500;font-size:25px;line-height:1.2;color:var(--ink);margin-bottom:10px}
+  .dark h1.title{color:#ece6d8}
+  p.lead{font-size:14px;line-height:1.6;color:var(--inksoft);margin-bottom:8px}
+  .dark p.lead{color:var(--mist)}
+  .quote{font-family:'Spectral',serif;font-style:italic;font-size:23px;line-height:1.4;color:#ece6d8;text-align:center;padding:14px 6px}
+  .src{text-align:center;font-size:12px;color:var(--mistsoft);letter-spacing:.04em;margin-top:6px}
+  .glosa{font-family:'Spectral',serif;font-size:16px;line-height:1.5;color:var(--ink);background:rgba(196,153,90,.1);border-left:2px solid var(--brass);padding:12px 14px;border-radius:0 8px 8px 0;margin-top:4px}
+
+  .btn{display:block;width:100%;border:1px solid rgba(196,153,90,.45);background:rgba(196,153,90,.06);color:var(--ink);border-radius:11px;padding:14px;cursor:pointer;font-size:14px;font-family:'Inter';transition:all .18s;margin-top:10px;text-align:center}
+  .btn:hover{background:rgba(196,153,90,.16);border-color:var(--brass);transform:translateY(-1px)}
+  .dark .btn{color:#e6e0d2}
+  .btn.brass{background:var(--brass);border-color:var(--brass);color:#fff8ec}
+  .btn.brass:hover{background:var(--brassdeep)}
+  .btn.ghost{background:none;border-color:rgba(174,182,201,.3);color:var(--mistsoft)}
+  .dark .btn.ghost:hover{background:rgba(174,182,201,.08);color:var(--mist)}
+  .btn.small{padding:11px;font-size:13px}
+  .row{display:flex;gap:8px}
+  .row .btn{margin-top:10px}
+
+  .choice{font-family:'Spectral',serif;font-size:18px;color:#e6e0d2;border:1px solid rgba(196,153,90,.4);background:rgba(196,153,90,.05);border-radius:12px;padding:18px 16px;cursor:pointer;text-align:center;transition:all .2s;margin-top:12px}
+  .choice:hover{background:rgba(196,153,90,.16);border-color:var(--brass);transform:translateY(-1px)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chip{border:1px solid rgba(196,153,90,.4);background:transparent;color:var(--ink);border-radius:20px;padding:9px 14px;cursor:pointer;font-size:13px;transition:all .15s}
+  .chip:hover{border-color:var(--brass)}
+  .chip.on{background:var(--brass);border-color:var(--brass);color:#fff8ec}
+
+  .frag{font-family:'Spectral',serif;font-style:italic;font-size:16px;line-height:1.45;color:var(--ink);border:1px solid rgba(196,153,90,.3);border-radius:10px;padding:14px;cursor:pointer;margin-top:10px;transition:all .18s}
+  .frag:hover{background:rgba(196,153,90,.08);border-color:var(--brass)}
+  .frag.on{background:rgba(196,153,90,.16);border-color:var(--brass)}
+
+  .slider{margin:18px 2px 4px}
+  .slider label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--inksoft);margin-bottom:7px;font-style:italic}
+  input[type=range]{width:100%;accent-color:var(--brass)}
+
+  textarea{width:100%;min-height:74px;border:1px solid rgba(196,153,90,.35);border-radius:10px;padding:11px;font-family:'Spectral',serif;font-size:15px;color:var(--ink);background:rgba(255,255,255,.4);resize:vertical;margin-top:6px}
+  textarea:focus{outline:none;border-color:var(--brass)}
+  .checkrow{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--inksoft)}
+  .checkrow input{accent-color:var(--brass)}
+
+  .rate{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid rgba(196,153,90,.2)}
+  .rate .rl{font-size:11.5px;color:#9aa3b8;font-style:italic;width:100%;margin-bottom:2px}
+  .rbtn{border:1px solid rgba(196,153,90,.4);background:none;color:#d3ccba;border-radius:16px;padding:6px 13px;font-size:12px;cursor:pointer;transition:all .15s;font-family:'Inter'}
+  .rbtn:hover{border-color:var(--brass)}
+  .rbtn.on{background:var(--brass);color:#fff8ec;border-color:var(--brass)}
+  .rbtn.ondown{background:#5e68a0;color:#fff;border-color:#5e68a0}
+
+  .keepbtn{display:block;width:100%;text-align:left;border:1px solid rgba(196,153,90,.45);background:rgba(196,153,90,.06);border-radius:11px;padding:12px 14px;margin-top:10px;cursor:pointer;transition:all .18s}
+  .keepbtn:hover{border-color:var(--brass);background:rgba(196,153,90,.14);transform:translateY(-1px)}
+  .keepbtn .t{display:block;color:#f0e9da;font-size:14px;font-family:'Inter';font-weight:500}
+  .keepbtn .s{display:block;color:#9aa3b8;font-size:11.5px;margin-top:3px;font-style:italic;line-height:1.4}
+  .keepbtn.prime{background:var(--brass);border-color:var(--brass)}
+  .keepbtn.prime .t{color:#fff8ec}
+  .keepbtn.prime .s{color:#4a3a1c}
+  .keepbtn.ghost{background:none;border-color:rgba(174,182,201,.3)}
+  .flagbtn{display:block;width:100%;text-align:left;border:1px solid rgba(138,147,196,.25);background:none;border-radius:10px;padding:9px 12px;margin-top:14px;cursor:pointer;transition:all .15s}
+  .flagbtn:hover{border-color:var(--tension);background:rgba(138,147,196,.08)}
+  .flagbtn span{display:block;color:#8a93c4;font-size:12px}
+  .flagbtn .fs{color:#717b94;font-size:10px;margin-top:2px;font-style:italic}
+  .flagbtn.on{border-color:var(--tension);background:rgba(138,147,196,.14)}
+  .flagbtn.on span{color:#cdd3ea}
+
+  .echo{border-top:1px solid rgba(196,153,90,.25);margin-top:16px;padding-top:14px}
+  .echo .m{font-family:'Spectral',serif;font-style:italic;font-size:14px;color:var(--inksoft);padding:9px 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .rez{flex-shrink:0;border:1px solid rgba(196,153,90,.4);background:none;color:var(--brassdeep);border-radius:16px;padding:5px 11px;font-size:11px;cursor:pointer;transition:all .15s}
+  .rez:hover{background:rgba(196,153,90,.14)}
+  .rez.on{background:var(--brass);color:#fff8ec;border-color:var(--brass)}
+
+  svg{display:block;width:100%;height:auto}
+  .starlbl{font-family:'Spectral',serif;font-size:10.5px;fill:var(--mist);pointer-events:none}
+  .star-dim circle{opacity:.3}
+  .note{font-size:12px;color:var(--mistsoft);line-height:1.55;margin-top:12px;font-style:italic}
+  .banner{background:rgba(138,147,196,.14);border:1px solid var(--tension);color:#cdd3ea;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:12px;line-height:1.5}
+  .person{border:1px solid rgba(196,153,90,.3);border-radius:11px;padding:13px;margin-top:10px}
+  .person .nm{font-family:'Spectral',serif;font-size:16px;color:#ece6d8}
+  .person .tag{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin-left:8px}
+  .person .ln{font-size:12.5px;color:var(--mist);margin:5px 0 9px;font-style:italic}
+
+  .zq{border:1px solid rgba(196,153,90,.25);border-radius:10px;padding:14px;margin-top:12px}
+  .zt{font-family:'Spectral',serif;font-style:italic;font-size:17px;color:#ece6d8;line-height:1.4}
+  .zg{font-family:'Spectral',serif;font-size:14px;color:#cfc8b6;margin-top:8px;line-height:1.45}
+  .mym{background:rgba(196,153,90,.16);border-left:2px solid var(--brass);border-radius:0 8px 8px 0;padding:10px 12px;margin-top:10px;font-family:'Spectral',serif;font-size:15px;color:#f3ecdb;line-height:1.45}
+  .mym .lbl{display:block;font-family:'Inter';font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin-bottom:5px;font-style:normal}
+  .znic{font-family:'Spectral',serif;font-size:14px;color:#cfc8b6;padding:9px 0;border-bottom:1px solid rgba(196,153,90,.12);line-height:1.4}
+  .znic.ten{color:#bcc3df}
+
+  .cienbtn{border:1px solid rgba(138,147,196,.45);background:none;color:#aab2d6;border-radius:16px;padding:6px 13px;font-size:12px;cursor:pointer;margin-top:10px;font-family:'Inter'}
+  .cienbtn:hover{background:rgba(138,147,196,.12);border-color:var(--tension)}
+  .cien{margin-top:10px;padding:12px 14px;border-left:2px solid var(--tension);background:rgba(138,147,196,.1);border-radius:0 8px 8px 0;font-family:'Spectral',serif;font-size:14px;color:#d7dcec;line-height:1.55;font-style:italic}
+  .cien .ch{font-style:normal;font-family:'Inter';font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--tension);margin-bottom:6px;display:block}
+
+  .qrow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(196,153,90,.12)}
+  .qsc{flex-shrink:0;width:32px;text-align:right;font-family:'Spectral',serif;font-size:15px;color:var(--brass)}
+  .qtx{font-size:12.5px;color:#cfc8b6;line-height:1.4}
+
+  .dark .glosa{color:#f3ecdb;background:rgba(196,153,90,.22)}
+  .dark .echo .m{color:#d3ccba}
+  .dark .rez{color:var(--brass)}
+  .dark .note{color:#9aa3b8}
+  .dark .src{color:#aab2c6}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="g">&#10022;</span><span class="t">Your <b>Soul</b></span></div>
+    <button class="reset" id="reset">zacznij od nowa</button>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// ---------- KORPUS (38 cytatow, domena publiczna, brzmienia robocze; czesc ma "cien") ----------
+var CORPUS = [
+  {id:1, a:'Archimedes', w:'', v:[-1,-0.5,0,-0.5,0.5], t:'Dajcie mi punkt podparcia, a poruszę Ziemię.', g:'Świat jako dźwignia — poddaje się temu, kto rozumie, jak działa. Umysł, który nie pyta „po co", lecz „którędy".'},
+  {id:2, a:'Sokrates', w:'', v:[0,-0.5,0.5,0.5,0.5], t:'Wiem, że nic nie wiem.', g:'Wiedza zaczyna się od przyznania niewiedzy. Pokora jako narzędzie, nie słabość.'},
+  {id:3, a:'Fryderyk Nietzsche', w:'', v:[1,0,0,0,0.5], t:'Kto ma po co żyć, zniesie niemal każde jak.', g:'Sens unosi mechanizm. Znaczenie jest tym, co pozwala przetrzymać życie.', cien:'Człowiek, który uczył znoszenia każdego „jak", ostatnią dekadę przeżył w obłędzie — milczący, niepoznający bliskich, pod opieką siostry, która po jego śmierci fałszowała jego pisma. „Po co", którego szukał, nie ocaliło go przed rozpadem.'},
+  {id:4, a:'Baruch Spinoza', w:'', v:[0.5,-1,-0.5,0,-0.5], t:'Nie wyśmiewać, nie opłakiwać, nie potępiać — lecz rozumieć.', g:'Chłód rozumu zamiast uniesienia. Patrzeć bez gniewu i bez egzaltacji.'},
+  {id:5, a:'napis w Delfach', w:'', v:[0.5,0,-0.5,0.5,0.5], t:'Poznaj samego siebie.', g:'Spojrzenie do wewnątrz, które jest warunkiem wszystkiego. Najtrudniejsze polecenie filozofii.'},
+  {id:6, a:'Immanuel Kant', w:'', v:[0.5,1,0.5,0.5,0], t:'Niebo gwiaździste nade mną, prawo moralne we mnie.', g:'Dwa źródła czci — ogrom kosmosu i głos sumienia. Podziw świecki i sakralny w jednym zdaniu.'},
+  {id:7, a:'Blaise Pascal', w:'', v:[0.5,0,-1,0.5,0.5], t:'Całe nieszczęście człowieka stąd, że nie umie usiedzieć sam w pokoju.', g:'Pokój i prawda mieszkają w samotności, nie w zgiełku. Nasz niepokój to ucieczka przed sobą.', cien:'Ten, kto opisał ludzką niemożność usiedzenia w pokoju, sam dręczony chorobą i lękiem ostatnie lata spędził w ascezie tak surowej — włosiennica, posty, wyrzeczenie nauki — że bliscy obawiali się o jego życie. Diagnozę postawił także sobie.'},
+  {id:8, a:'Terencjusz', w:'', v:[0.5,0.5,0.5,0,0], t:'Człowiekiem jestem i nic, co ludzkie, nie jest mi obce.', g:'Wspólnota ludzka jako fakt, nie wybór. Solidarność szersza niż plemię.'},
+  {id:9, a:'Ewangelia Mateusza', w:'', v:[0.5,0.5,1,0.5,0], t:'Gdzie dwóch albo trzech zgromadzonych, tam jestem pośród nich.', g:'Prawda rozpala się między ludźmi. Sens dzielony przy ognisku, nie strzeżony w samotni.'},
+  {id:10, a:'Pitagoras', w:'', v:[-0.5,0.5,0,-1,0], t:'Wszystko jest liczbą.', g:'Pod chaosem zjawisk drzemie ukryty wzór. Świat da się policzyć.'},
+  {id:11, a:'Heraklit', w:'', v:[0,0.5,0,0.5,0.5], t:'Wszystko płynie.', g:'Zmiana jako jedyne prawo — i porządek, i tajemnica. Rzeka, w którą nie wejdziesz dwa razy.'},
+  {id:12, a:'Tertulian', w:'', v:[0.5,0.5,0.5,1,0.5], t:'Wierzę, bo to niedorzeczne.', g:'Są prawdy, których rozum nie obejmie, a serce jednak uznaje. Tajemnica ponad porządkiem.'},
+  {id:13, a:'Marek Aureliusz', w:'', v:[0.5,0,-0.5,0,-1], t:'Jeśli coś cię gnębi z zewnątrz, gnębi cię nie ono, lecz twój sąd o nim.', g:'Ukojenie przez panowanie nad sądem. Świat nie rani — rani opinia, którą można cofnąć.', cien:'Cesarz, który pisał o łagodności i panowaniu nad gniewem, prowadził wyniszczające wojny, a za jego rządów prześladowano chrześcijan. Nie zdołał też uchronić świata przed własnym synem — okrutnym Kommodusem, którego sam namaścił na następcę. Filozof na tronie, bezsilny wobec najbliższych.'},
+  {id:14, a:'Księga Koheleta', w:'', v:[0.5,-0.5,0,0.5,0.5], t:'Marność nad marnościami, wszystko marność.', g:'Gorzka trzeźwość, która zarazem koi (bo zrównuje) i niepokoi (bo odbiera złudzenia).'},
+  {id:15, a:'Fryderyk Nietzsche', w:'', v:[0.5,0.5,0,0.5,1], t:'Trzeba mieć w sobie chaos, by porodzić tańczącą gwiazdę.', g:'Wstrząs jako warunek tworzenia. Chaos jako kolebka, nie grób.', cien:'Ten, kto wzywał chaos jako kolebkę gwiazd, sam został przez własny chaos pochłonięty — załamanie na ulicy w Turynie, z którego nigdy nie wrócił. Słowo bywa proroctwem także o swoim autorze.'},
+  {id:16, a:'Lao Tzu', w:'', v:[0.5,0.3,-0.3,0.5,0], t:'Kto zna innych, jest mądry; kto zna siebie, jest oświecony.', g:'Najtrudniejsza wiedza patrzy do wewnątrz.'},
+  {id:17, a:'Epiktet', w:'', v:[0.5,-0.3,-0.3,0,-0.7], t:'Nie rzeczy nas niepokoją, lecz nasze mniemania o nich.', g:'Wolność zaczyna się tam, gdzie kończy się przymus naszych sądów.'},
+  {id:18, a:'Henry David Thoreau', w:'', v:[0.5,-0.3,-0.5,0.3,0.5], t:'Większość ludzi wiedzie życie w cichej rozpaczy.', g:'Zdanie, które boli, bo trafia. Wypowiedziane spokojnie, uderza tym mocniej.'},
+  {id:19, a:'Walt Whitman', w:'', v:[0.5,0.7,0.5,0.5,0.5], t:'Jestem ogromny, mieszczę w sobie wielość.', g:'Sprzeczność nie jest wadą duszy, lecz jej miarą.'},
+  {id:20, a:'Emily Dickinson', w:'', v:[0.5,0.7,0,0.3,-0.5], t:'Nadzieja to pierzaste stworzenie, co siada w duszy.', g:'Coś, co śpiewa bez słów i nie milknie nigdy.'},
+  {id:21, a:'William Blake', w:'', v:[0.7,1,0,0.7,0.3], t:'Ujrzeć świat w ziarnku piasku, a niebo w polnym kwiecie.', g:'Ogrom ukryty w drobinie — wzrok, który widzi całość w okruchu.'},
+  {id:22, a:'Rumi', w:'', v:[0.7,0.7,0.3,0.5,0.3], t:'Rana jest miejscem, którędy wchodzi w ciebie światło.', g:'Pęknięcie jako droga, nie tylko ból.'},
+  {id:23, a:'Seneka', w:'', v:[0.5,0,-0.3,0,-0.5], t:'Nie dlatego nie próbujemy, że trudne; trudne jest, bo nie próbujemy.', g:'Lęk powiększa górę, którą i tak trzeba przejść.', cien:'Stoik, który uczył pogardy dla bogactwa, był jednym z najbogatszych ludzi Rzymu, a wedle starożytnych pożyczał na tak wysoki procent, że ściąganie długów pomogło wzniecić bunt w Brytanii. Wstrzemięźliwość na papierze, wierzyciel w życiu.'},
+  {id:24, a:'Augustyn z Hippony', w:'', v:[0.7,0.6,0.3,0.7,-0.2], t:'Niespokojne jest serce nasze, póki nie spocznie.', g:'Tęsknota jako kompas. Niepokój, który jest formą szukania, nie błądzenia.'},
+  {id:25, a:'Marek Aureliusz', w:'', v:[0.3,-0.3,-0.3,0.3,0.3], t:'Wkrótce zapomnisz o wszystkim; wkrótce wszystko zapomni o tobie.', g:'Znikomość nie jako rozpacz, lecz jako wyzwolenie z ciężaru własnej wagi.'},
+  {id:26, a:'Arthur Schopenhauer', w:'', v:[0.5,-0.3,-1,0.3,0.3], t:'Samotność jest losem wszystkich wielkich duchów.', g:'Cena głębi bywa oddaleniem. Nie każdą samotność wybieramy.', cien:'Filozof samotności i współczucia w gniewie zrzucił podobno ze schodów hałaśliwą sąsiadkę i przez resztę jej życia płacił zasądzoną rentę. Po jej śmierci zanotował: „umarła starucha, znikł ciężar". Wielki umysł, marny bliźni.'},
+  {id:27, a:'Fiodor Dostojewski', w:'', v:[0.7,0.9,0.3,0.7,0.3], t:'Piękno zbawi świat.', g:'Nie siła ani rozum — piękno jako ostatnia, niedorzeczna nadzieja.', cien:'Człowiek, który napisał, że piękno zbawi świat, latami niszczył siebie i najbliższych nałogiem ruletki — potrafił przegrać do ostatniej monety pieniądze żony i zastawić jej suknie. Piękno głosił; brzydotę uzależnienia przeżywał na własnej skórze.'},
+  {id:28, a:'Blaise Pascal', w:'', v:[0.7,0.5,0,0.7,0.3], t:'Serce ma swoje racje, których rozum nie zna.', g:'Są prawdy dostępne tylko sercu — i głupcem jest, kto ich nie słucha.'},
+  {id:29, a:'Heraklit', w:'', v:[0.3,0.5,0,0.7,0.3], t:'Ukryta harmonia jest mocniejsza niż jawna.', g:'To, co najgłębsze, nie rzuca się w oczy. Najmocniejszy ład bywa niewidzialny.'},
+  {id:30, a:'Lao Tzu', w:'', v:[0.3,0,-0.3,0.7,0.3], t:'Kto wie, nie mówi; kto mówi, nie wie.', g:'Najgłębsza wiedza milczy. Słowo bywa pierwszym oddaleniem od prawdy.'},
+  {id:31, a:'Epikur', w:'', v:[0.5,0,-0.3,0,-0.7], t:'Nie psuj tego, co masz, pragnieniem tego, czego nie masz.', g:'Wdzięczność jako sztuka. Spokój nie w zdobywaniu, lecz w przestaniu gonić.'},
+  {id:32, a:'Fryderyk Nietzsche', w:'', v:[0.5,0.7,0.3,0.3,0.3], t:'Bez muzyki życie byłoby błędem.', g:'Piękno jako dowód, nie ozdoba — że jednak warto było.'},
+  {id:33, a:'Owidiusz', w:'', v:[-0.5,0,0,-0.3,0], t:'Kropla drąży skałę nie siłą, lecz częstym padaniem.', g:'Cierpliwość jako forma siły. Wzór, który działa wbrew pozorom słabości.'},
+  {id:34, a:'Cyceron', w:'', v:[0.5,0.3,0.6,0.3,-0.3], t:'Życie zmarłych trwa w pamięci żywych.', g:'Pamięć jako forma trwania. Nie znikamy, póki ktoś nas niesie.'},
+  {id:35, a:'Fiodor Dostojewski', w:'', v:[0.5,-0.3,0,0.3,0.5], t:'Człowiek to istota, która do wszystkiego przywyka.', g:'Nasza siła i nasze przekleństwo zarazem — że umiemy znieść niemal wszystko.'},
+  {id:36, a:'Johann Wolfgang Goethe', w:'', v:[0.3,0.3,0,0.5,0.5], t:'Niewielu ludzi ma dość wyobraźni dla rzeczywistości.', g:'Rzeczywistość bywa dziwniejsza niż fantazja — trzeba odwagi, by ją zobaczyć.'},
+  {id:37, a:'Marek Aureliusz', w:'', v:[0.5,0,0,0,-0.5], t:'Najlepszą zemstą jest nie być podobnym do tego, kto wyrządził krzywdę.', g:'Godność jako odpowiedź na krzywdę. Nie odpłacasz — przerastasz.'},
+  {id:38, a:'Tomasz a Kempis', w:'', v:[0.5,0.3,0.3,0.7,-0.2], t:'Człowiek układa, lecz nie jemu dane rozporządzać.', g:'Pokora wobec tego, co nas przerasta. Plan jest nasz, ostatnie słowo — nie.'}
+];
+
+var AXES = ['Sens','Zachwyt','Wspólnota','Tajemnica','Prowokacja'];
+
+var WORLDS = ['Literatura i poezja','Filozofia','Duchowość','Historia','Nauka i kosmos','Psychologia','Sztuka','Muzyka'];
+
+var SONDA = [
+  {t:'Bądź jak przylądek, o który nieustannie biją fale — on trwa, a wokół niego zasypia wzburzony żywioł.', v:[0.5,0,-0.5,0,-0.7]},
+  {t:'Piękno jest jedynie początkiem grozy, którą jeszcze zdołamy znieść.', v:[0.5,0.7,0,0.7,0.5]},
+  {t:'Kto walczy z potworami, niech baczy, by sam nie stał się potworem.', v:[0.5,0.3,0,0.3,0.7]}
+];
+
+var DICHO = [
+  {axis:0, q:'Pociąga mnie raczej…', neg:'to, jak coś działa', pos:'to, co coś znaczy'},
+  {axis:4, q:'Dziś chcę, by mnie…', neg:'ukojono', pos:'wstrząśnięto'},
+  {axis:3, q:'Bliżej mi do…', neg:'tego, co da się rozłożyć na części', pos:'tego, co pozostaje tajemnicą'},
+  {axis:2, q:'Prawdy szukam…', neg:'w samotności', pos:'przy wspólnym ogniu'},
+  {axis:1, q:'Świat budzi we mnie raczej…', neg:'trzeźwy chłód', pos:'zachwyt'}
+];
+
+var ECHO = [
+  {m:'Czytam to trzeci raz i za każdym razem znaczy co innego.', by:'Hanna'},
+  {m:'Zapisałam to sobie nad biurkiem lata temu. Wraca.', by:'Tomasz'}
+];
+
+var TOWER_GLOSY = [
+  [ 'pytanie „jak" i pytanie „po co" to nie dwie drogi, lecz jedna — nie zrozumiesz mechanizmu, póki nie wiesz, czemu chcesz go zrozumieć.',
+    'najzimniejszy mechanizm i najgorętszy sens spotykają się w jednym: kto naprawdę pojął, jak coś działa, zwykle wie też, dlaczego to pokochał.',
+    'rozkładać świat na części i pytać, co znaczy — to nie wrogowie; to wdech i wydech tego samego zdumienia, że cokolwiek w ogóle jest.' ],
+  [ 'trzeźwość i zachwyt nie wykluczają się — najgłębszy podziw rodzi się dopiero wtedy, gdy przestajesz się łudzić, a świat i tak okazuje się cudem.',
+    'chłodne oko, które niczego nie upiększa, i serce, które bije z zachwytu — to dwie strony tej samej uczciwości wobec rzeczy.',
+    'zwątpienie oczyszcza zachwyt z naiwności — i dopiero podziw, który przeszedł przez sceptycyzm, jest nie do odebrania.' ],
+  [ 'samotnia i wspólny ogień to dwa oddechy tej samej tęsknoty — wycofujesz się w siebie, by mieć co przynieść innym, i wracasz do innych, by wiedzieć, kim jesteś sam.',
+    'najgłębsze, co masz dla ludzi, dojrzewa w samotności — a samotność, która nie wraca do nikogo, zamienia się w pustkę, nie w głębię.',
+    'prawda prywatna i prawda dzielona nie są rywalkami: jedna jest korzeniem, druga owocem, a drzewo potrzebuje obu.' ],
+  [ 'świat jest zarazem do policzenia i nie do pojęcia — dojrzałość to szukać wzoru, nie tracąc czci dla tego, co wzorowi się wymyka.',
+    'im więcej wzoru odkrywasz, tym wyraźniej widać granicę, za którą wzór się kończy — i właśnie tam zaczyna się prawdziwa tajemnica.',
+    'porządek bez tajemnicy jest martwy, tajemnica bez porządku jest chaosem — żywe jest tylko to, co ma jedno i drugie.' ],
+  [ 'pociecha i wstrząs nie są wrogami — obie żądają jednego, byś nie odwracał wzroku: jedna byś wytrzymał prawdę, druga byś jej nie przespał.',
+    'to, co koi, i to, co wstrząsa, służą tej samej rzeczy: żebyś dożył do rana i żebyś nie przespał życia; potrzebujesz obu, w różne noce.',
+    'czasem najłagodniejsze słowo jest najbardziej wywrotowe, a najostrzejsze — najczulsze; nie myl tonu z prawdą, którą niesie.' ]
+];
+
+var PRZESILENIA = [
+  {axis:0, name:'Skuteczność ↔ Znaczenie', a:'to, co działa', b:'to, co znaczy',
+    beats:[ {kick:'Przesilenie — Skuteczność ↔ Znaczenie', txt:'Masz przed sobą rozwiązanie, które zadziała bez pudła — szybkie, czyste, skuteczne. I drugie, które nie obiecuje wyniku, lecz ocala sens całej rzeczy.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Wybrać skuteczność znaczy dostać wynik i stracić to, po co zaczynałeś. Wybrać znaczenie znaczy zostać wiernym sensowi i może przegrać.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Skuteczność daje wynik, którego nie wstyd pokazać — ale wynik bez sensu bywa najgładszą formą porażki.'},
+  {axis:0, name:'Prostota ↔ Prawda', a:'prostą odpowiedź', b:'całą prawdę',
+    beats:[ {kick:'Przesilenie — Prostota ↔ Prawda', txt:'Pytają cię o coś wprost. Masz odpowiedź prostą, jasną, którą wszyscy zrozumieją — i drugą, prawdziwą, ale tak złożoną, że rozmyje się w głowach.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Prosta odpowiedź zostanie zapamiętana i zafałszuje rzecz. Cała prawda będzie wierna i nikt jej nie uniesie.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Prostota niesie dalej, lecz mniej; prawda niesie wiernie, lecz nie wszędzie dotrze.'},
+  {axis:1, name:'Trzeźwość ↔ Zachwyt', a:'trzeźwy chłód', b:'zachwyt',
+    beats:[ {kick:'Przesilenie — Trzeźwość ↔ Zachwyt', txt:'Otwiera się przed tobą chwila całkowitego uniesienia — miłości, wiary, piękna — o której wiesz, że jest po części złudzeniem.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Zachować trzeźwość znaczy nie dać się ponieść i może ocaleć — ale nigdy nie zaznać. Oddać się znaczy uwierzyć w coś, co może cię zwieść.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Trzeźwość chroni przed złudzeniem — ale czasem to złudzenie było jedyną prawdą, jaką dało się przeżyć.'},
+  {axis:1, name:'Cudza wiara ↔ Twoja trzeźwość', a:'cudzą wiarę', b:'własną trzeźwość',
+    beats:[ {kick:'Przesilenie — Cudza wiara ↔ Trzeźwość', txt:'Ktoś bliski żyje pięknym przekonaniem, które trzyma go przy życiu — a które ty widzisz jako złudzenie. Możesz mu je zostawić albo odebrać prawdą.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Zostawić znaczy uszanować jego siłę i być nieszczerym. Odebrać znaczy być wiernym prawdzie i zgasić światło, które go niosło.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Twoja trzeźwość bywa darem, a bywa okrucieństwem — nie zawsze prawda jest tym, czego ktoś potrzebuje, by żyć.'},
+  {axis:2, name:'Wierność ↔ Wolność', a:'wierność wspólnocie', b:'własną drogę',
+    beats:[ {kick:'Przesilenie — Wierność ↔ Wolność', txt:'Wspólnota, która cię uformowała i nigdy nie zawiodła, prosi cię dziś, byś został. Odejście będzie wyglądać jak zdrada.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Zostać znaczy oddać własną drogę, którą czujesz jak powołanie. Odejść znaczy zranić tych, którym zawdzięczasz, kim jesteś.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Wierność bywa domem, a bywa klatką — a wolność, która rani wiernych, nie jest jeszcze niewinna.'},
+  {axis:2, name:'Swoi ↔ Sprawiedliwość', a:'swoich', b:'sprawiedliwość',
+    beats:[ {kick:'Przesilenie — Swoi ↔ Sprawiedliwość', txt:'Ktoś z twoich — z rodziny, z bliskich — zawinił. Możesz go osłonić albo stanąć po stronie skrzywdzonego obcego.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Osłonić swoich znaczy zdradzić sprawiedliwość. Wydać ich znaczy zdradzić tych, którzy ci ufali jak nikomu.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Wierność swoim bywa cnotą i bywa zmową — a sprawiedliwość bez litości dla bliskich łatwo staje się okrucieństwem.'},
+  {axis:3, name:'Poznać ↔ Tajemnica', a:'poznanie', b:'nienaruszoną tajemnicę',
+    beats:[ {kick:'Przesilenie — Poznać ↔ Tajemnica', txt:'Masz wreszcie w ręku klucz, by rozłożyć na części rzecz, którą kochasz — wiarę, człowieka, zachwyt. Zrozumiesz ją do dna.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Poznać do końca znaczy rozpuścić tajemnicę, która była połową piękna. Zostawić nienaruszone znaczy nigdy nie wiedzieć.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Są rzeczy, które rozumiemy dopiero, gdy je rozbierzemy — i takie, które rozbierając, zabijamy.'},
+  {axis:3, name:'Pewność ↔ Wątpienie', a:'pewność', b:'uczciwe wątpienie',
+    beats:[ {kick:'Przesilenie — Pewność ↔ Wątpienie', txt:'Masz wybór: zatrzymać pewność, która daje ci grunt pod nogami, albo dopuścić wątpliwość, która jest uczciwsza, lecz odbiera oparcie.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Trzymać pewność znaczy stać na czymś, co może być nieprawdą. Dopuścić wątpienie znaczy być uczciwym i stracić dom.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Pewność daje grunt, lecz bywa złudna; wątpienie jest uczciwe, lecz nie da się na nim spać.'},
+  {axis:4, name:'Prawda ↔ Litość', a:'bezwzględną prawdę', b:'litość',
+    beats:[ {kick:'Przesilenie — Prawda ↔ Litość', txt:'Zmierzch. Ktoś, kogo kochasz, dożywa ostatnich dni — i pyta cię o rzecz, którą przez całe życie przed nim ukrywano.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Znasz prawdę. Prawda odbierze mu ostatni spokój. Łagodne kłamstwo da mu pogodną śmierć — ale zdradzi wszystko, co uznawałeś za swoje.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Prawda nie jest wyrokiem na cudzy spokój — ale litość, która kłamie, też ma swoją cenę.'},
+  {axis:4, name:'Spokój ↔ Bunt', a:'spokój', b:'bunt',
+    beats:[ {kick:'Przesilenie — Spokój ↔ Bunt', txt:'Wobec krzywdy, której nie zmienisz, masz wybór: znaleźć w sobie spokój i przyjąć ją, albo nie zgodzić się nigdy i nieść bunt, który cię wypali.', btn:'Dalej'},
+      {kick:'Nie ma dobrej opcji', txt:'Spokój ocali ciebie i może pogodzi z niesprawiedliwością. Bunt zachowa twoją prawość i może cię zniszczy.', btn:'Stoisz na rozłamie'} ],
+    pointa:'Spokój wobec zła bywa mądrością i bywa kapitulacją; bunt bywa godnością i bywa samozniszczeniem. Nie ma tu czystej ręki.'}
+];
+
+// ---------- STAN ----------
+var S;
+function fresh(){ S = {worlds:[], odcisk:[0,0,0,0,0], mood:[0,0,0,0,0], shown:[], zielnik:[], nici:[], current:null, di:0, honesty:60, sonda:null, link:[], linkTyp:null, dimmed:null, marg:{}, pub:{}, prz:[], flagged:{}}; }
+fresh();
+
+var app = document.getElementById('app');
+function show(html){ app.innerHTML = html; window.scrollTo(0,0); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function clamp(x){ return Math.max(-1, Math.min(1, x)); }
+function distv(a,b){ var s=0; for(var i=0;i<5;i++){ var d=a[i]-b[i]; s+=d*d; } return Math.sqrt(s); }
+function targetVec(){ return S.odcisk.map(function(o,i){ return clamp(o*0.4 + S.mood[i]); }); }
+function corpusById(id){ for(var i=0;i<CORPUS.length;i++) if(CORPUS[i].id===id) return CORPUS[i]; return null; }
+function lastName(a){ return a.split(' ').pop(); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function axisOfMaxDiff(a,b){ var best=0,bd=-1; for(var k=0;k<5;k++){ var d=Math.abs(a.v[k]-b.v[k]); if(d>bd){bd=d;best=k;} } return best; }
+function tensionAxis(a,b){
+  var best=-1, bd=0, k;
+  for(k=0;k<5;k++){ var lo=Math.min(a.v[k],b.v[k]), hi=Math.max(a.v[k],b.v[k]); if(lo<=-0.35 && hi>=0.35){ var s=hi-lo; if(s>bd){bd=s;best=k;} } }
+  if(best<0){ for(k=0;k<5;k++){ var gap=Math.abs(a.v[k]-b.v[k]); if(gap>=1.0 && gap>bd){bd=gap;best=k;} } }
+  return best;
+}
+function matchQuote(extra){
+  var t=targetVec(); var ex=S.shown.concat(extra||[]);
+  var best=null, bd=1e9;
+  for(var i=0;i<CORPUS.length;i++){ var q=CORPUS[i]; if(ex.indexOf(q.id)>=0) continue; var d=distv(t,q.v); if(d<bd){bd=d; best=q;} }
+  if(!best){ S.shown=[]; return matchQuote(extra); }
+  return best;
+}
+function inZielnik(id){ return S.zielnik.some(function(q){ return q.id===id; }); }
+function qById(id){ for(var i=0;i<S.zielnik.length;i++) if(S.zielnik[i].id===id) return S.zielnik[i]; return corpusById(id); }
+
+document.getElementById('reset').addEventListener('click', function(){ fresh(); screenIntro(); });
+
+function screenIntro(){
+  show(
+    '<div class="card dark">'+
+    '<div class="kick l">Prototyp działający</div>'+
+    '<h1 class="title">To nie jest kolejny feed.<br>To rytuał.</h1>'+
+    '<p class="lead">Nie szukasz tu zasięgu. Szukasz słów, które trafiają w to, jak myślisz — i ludzi, którzy myślą podobnie. Przejdź całą ścieżkę: od progu, przez wyrocznię, po mapę własnego rozumienia.</p>'+
+    '<p class="note">Dobór cytatu jest prawdziwy — po pięciu osiach, na korpusie 38 cytatów z domeny publicznej. Wieże i przesilenia rodzą się z Twoich własnych połączeń i słów, nie z klikania. Niektóre cytaty kryją „cień" — człowieka za słowem.</p>'+
+    '<button class="btn brass" id="go">Stań u Wrót</button>'+
+    '</div>'
+  );
+  document.getElementById('go').addEventListener('click', screenWrota1);
+}
+
+function screenWrota1(){
+  var chips = WORLDS.map(function(w){ var on=S.worlds.indexOf(w)>=0; return '<button class="chip'+(on?' on':'')+'" data-w="'+w+'">'+w+'</button>'; }).join('');
+  show(
+    '<div class="card">'+
+    '<div class="kick">Wrota · 1 z 2</div>'+
+    '<h1 class="title">W czym tracisz godziny?</h1>'+
+    '<p class="lead">Zaznacz, co naprawdę Cię pochłania. Można kilka — wielość mile widziana.</p>'+
+    '<div class="chips">'+chips+'</div>'+
+    '<button class="btn brass" id="next" style="opacity:.5;pointer-events:none">Dalej</button>'+
+    '</div>'
+  );
+  Array.prototype.forEach.call(app.querySelectorAll('[data-w]'), function(b){
+    b.addEventListener('click', function(){
+      var w=b.getAttribute('data-w'); var i=S.worlds.indexOf(w);
+      if(i>=0){ S.worlds.splice(i,1); b.classList.remove('on'); } else { S.worlds.push(w); b.classList.add('on'); }
+      var nx=document.getElementById('next');
+      if(S.worlds.length>0){ nx.style.opacity='1'; nx.style.pointerEvents='auto'; } else { nx.style.opacity='.5'; nx.style.pointerEvents='none'; }
+    });
+  });
+  document.getElementById('next').addEventListener('click', screenWrota2);
+}
+
+function screenWrota2(){
+  var frags = SONDA.map(function(s,i){ var on=S.sonda===i; return '<div class="frag'+(on?' on':'')+'" data-s="'+i+'">„'+s.t+'"</div>'; }).join('');
+  show(
+    '<div class="card">'+
+    '<div class="kick">Wrota · 2 z 2 — sonda</div>'+
+    '<h1 class="title">Które zdanie zostaje z Tobą?</h1>'+
+    '<p class="lead">Bez dobrych i złych odpowiedzi. Dotknij tego, które zostaje — i powiedz szczerze, jak mocno Cię porusza.</p>'+
+    frags+
+    '<div class="slider"><label><span>omija mnie</span><span>porusza mnie</span></label>'+
+    '<input type="range" min="0" max="100" value="'+S.honesty+'" id="hon"></div>'+
+    '<button class="btn brass" id="next" style="opacity:.5;pointer-events:none">Wejdź do Wyroczni</button>'+
+    '</div>'
+  );
+  Array.prototype.forEach.call(app.querySelectorAll('[data-s]'), function(f){
+    f.addEventListener('click', function(){
+      S.sonda=parseInt(f.getAttribute('data-s'),10);
+      Array.prototype.forEach.call(app.querySelectorAll('[data-s]'), function(x){ x.classList.remove('on'); });
+      f.classList.add('on');
+      var nx=document.getElementById('next'); nx.style.opacity='1'; nx.style.pointerEvents='auto';
+    });
+  });
+  document.getElementById('hon').addEventListener('input', function(e){ S.honesty=parseInt(e.target.value,10); });
+  document.getElementById('next').addEventListener('click', function(){
+    var scale = 0.3 + 0.7*(S.honesty/100);
+    var base = SONDA[S.sonda].v;
+    S.odcisk = base.map(function(x){ return clamp(x*scale); });
+    S.di=0; S.mood=[0,0,0,0,0];
+    screenDicho();
+  });
+}
+
+function screenDicho(){
+  if(S.di>=DICHO.length){ return screenWeigh(); }
+  var d=DICHO[S.di];
+  show(
+    '<div class="card dark">'+
+    '<div class="kick l">Wyrocznia · nastrój ('+(S.di+1)+'/'+DICHO.length+')</div>'+
+    '<h1 class="title">'+d.q+'</h1>'+
+    '<div class="choice" data-dir="neg">'+d.neg+'</div>'+
+    '<div class="choice" data-dir="pos">'+d.pos+'</div>'+
+    '</div>'
+  );
+  Array.prototype.forEach.call(app.querySelectorAll('[data-dir]'), function(c){
+    c.addEventListener('click', function(){
+      var dir=c.getAttribute('data-dir');
+      S.mood[d.axis] = dir==='pos' ? 0.85 : -0.85;
+      S.di++;
+      screenDicho();
+    });
+  });
+}
+
+function screenWeigh(){
+  show(
+    '<div class="card dark" style="text-align:center">'+
+    '<div class="kick l">Wyrocznia</div>'+
+    '<p class="lead" style="font-family:Spectral;font-style:italic;font-size:18px;color:#ece6d8;margin:18px 0">Wyrocznia waży twoje wybory…</p>'+
+    '<button class="btn brass" id="reveal">Odsłoń słowo</button>'+
+    '</div>'
+  );
+  document.getElementById('reveal').addEventListener('click', function(){
+    S.current = matchQuote();
+    if(S.current) S.shown.push(S.current.id);
+    screenQuote();
+  });
+}
+
+function screenQuote(){
+  var q=S.current;
+  show(
+    '<div class="card dark">'+
+    '<div class="kick l">Twoje słowo na dziś</div>'+
+    '<div class="quote">„'+q.t+'"</div>'+
+    '<div id="after"></div>'+
+    '<button class="btn ghost" id="glo">odsłoń glosę</button>'+
+    '</div>'
+  );
+  document.getElementById('glo').addEventListener('click', function(){
+    document.getElementById('glo').remove();
+    document.getElementById('after').innerHTML =
+      '<div class="glosa">'+q.g+'</div>'+
+      '<div class="src">— '+q.a+(q.w?', '+q.w:'')+'</div>'+
+      '<div style="margin-top:18px"><div class="kick">A Ty — co w tym słyszysz?</div>'+
+      '<textarea id="marg" placeholder="Możesz dopisać myśl. Albo zostawić puste."></textarea>'+
+      '<div class="checkrow"><input type="checkbox" id="pub"><label for="pub">pokaż mój margines innym (anonimowo)</label></div></div>'+
+      '<div style="margin-top:16px"><div class="kick">Co z tym cytatem?</div>'+
+      '<div class="row">'+
+      '<button class="btn small ghost" data-act="silence">zostaw w ciszy</button>'+
+      '<button class="btn small brass" data-act="keep">to zostaje ze mną</button></div>'+
+      '<div style="font-size:11px;color:#717b94;text-align:center;margin-top:7px;font-style:italic">po lewej — nie zostaje; po prawej — wchodzi do Twojej konstelacji</div>'+
+      '<button class="flagbtn" data-act="flag" style="text-align:center;margin-top:13px"><span>to oklepane — zgłoś do usunięcia z systemu</span><span class="fs">ocena cytatu dla redakcji — nie zachowuję go u siebie</span></button>'+
+      '</div>';
+    Array.prototype.forEach.call(app.querySelectorAll('[data-act]'), function(btn){
+      var act=btn.getAttribute('data-act');
+      btn.addEventListener('click', function(){
+        if(act==='keep'){
+          var txt=(document.getElementById('marg').value||'').trim();
+          if(txt){ S.marg[q.id]=txt; S.pub[q.id]=document.getElementById('pub').checked; }
+          afterMargin(true);
+        } else if(act==='silence'){
+          afterMargin(false);
+        } else {
+          S.flagged[q.id]=true;
+          afterMargin(false);
+        }
+      });
+    });
+  });
+}
+
+function afterMargin(saved){
+  if(saved && !inZielnik(S.current.id)){ S.zielnik.push(S.current); }
+  var echo = ECHO.map(function(e,i){
+    return '<div class="m">„'+e.m+'" <span style="opacity:.7">— '+e.by+'</span> <button class="rez" data-r="'+i+'">to też mnie poruszyło</button></div>';
+  }).join('');
+  var saveBtn = (inZielnik(S.current.id) || S.flagged[S.current.id]) ? '' : '<button class="btn small" id="keep">zachowaj w konstelacji</button>';
+  var flagNote = S.flagged[S.current.id] ? '<div style="font-size:11.5px;color:#8a93c4;font-style:italic;margin-bottom:10px">&#10003; Zgłoszony do usunięcia — dzięki, to pomaga czyścić korpus.</div>' : '';
+  var header = S.marg[S.current.id] ? 'Najpierw napisałeś — teraz słyszysz innych' : 'Inni przy tym samym cytacie';
+  show(
+    '<div class="card dark">'+
+    '<div class="kick l">'+header+'</div>'+
+    flagNote+
+    '<div class="quote" style="font-size:19px">„'+S.current.t+'"</div>'+
+    '<div class="echo">'+echo+'</div>'+
+    '<div style="margin-top:18px"><div class="kick">Dokąd dalej?</div>'+
+    '<button class="btn small" id="more">jeszcze w tym tonie</button>'+
+    saveBtn+
+    '<button class="btn small ghost" id="ziel">Twój zielnik (zapiski)</button>'+
+    '<button class="btn small ghost" id="konst">zobacz konstelację</button></div>'+
+    '</div>'
+  );
+  Array.prototype.forEach.call(app.querySelectorAll('[data-r]'), function(b){
+    b.addEventListener('click', function(){ b.classList.toggle('on'); b.textContent = b.classList.contains('on') ? 'poruszyło i Ciebie' : 'to też mnie poruszyło'; });
+  });
+  document.getElementById('more').addEventListener('click', function(){
+    for(var i=0;i<5;i++){ S.mood[i] = clamp(0.5*S.mood[i] + 0.6*S.current.v[i]); }
+    S.current = matchQuote();
+    if(S.current) S.shown.push(S.current.id);
+    screenQuote();
+  });
+  if(document.getElementById('keep')) document.getElementById('keep').addEventListener('click', function(){ if(!inZielnik(S.current.id)) S.zielnik.push(S.current); screenKonstelacja(); });
+  document.getElementById('ziel').addEventListener('click', screenZielnik);
+  document.getElementById('konst').addEventListener('click', screenKonstelacja);
+}
+
+function screenZielnik(){
+  if(S.zielnik.length===0 && S.nici.length===0){
+    show('<div class="card dark"><div class="kick l">Twój zielnik</div><h1 class="title">Jeszcze pusto.</h1><p class="lead">Wróć do Wyroczni, dopisz margines i zachowaj kilka słów. Tu zbierają się Twoje zapiski — cytaty, Twoje marginesy i nici.</p><button class="btn brass" id="back">Do Wyroczni</button><button class="btn small ghost" id="qual">podgląd: jakość cytatów</button></div>');
+    document.getElementById('back').addEventListener('click', function(){ S.di=0; S.mood=[0,0,0,0,0]; screenDicho(); });
+    document.getElementById('qual').addEventListener('click', screenQuality);
+    return;
+  }
+  var items = S.zielnik.map(function(q){
+    var mh = S.marg[q.id] ? '<div class="mym"><span class="lbl">Twój margines'+(S.pub[q.id]?' · publiczny':' · prywatny')+'</span>'+esc(S.marg[q.id])+'</div>' : '';
+    var ch = (q.cien && S.marg[q.id]) ? '<button class="cienbtn" data-cien="'+q.id+'">&#10022; odsłoń cień</button><div class="cien" id="cien'+q.id+'" style="display:none"><span class="ch">Cień — człowiek za słowem</span>'+q.cien+'<span style="display:block;margin-top:9px;font-style:normal;color:#9aa3b8;font-size:12px">Nie po to, by go pomniejszyć — po to, byś wiedział, że nawet ten, kto to napisał, był tylko człowiekiem. Jak Ty, gdy pisałeś przy tym swój margines.</span></div>' : '';
+    return '<div class="zq"><div class="zt">„'+q.t+'"</div><div class="src" style="text-align:left;margin-top:5px">— '+q.a+'</div><div class="zg">'+q.g+'</div>'+mh+ch+'</div>';
+  }).join('');
+  var niciH='';
+  if(S.nici.length){
+    niciH = '<div class="kick l" style="margin-top:20px">Twoje nici</div>' + S.nici.map(function(n){
+      var qa=corpusById(n.a), qb=corpusById(n.b);
+      var sym = n.type==='napiecie' ? '↮' : '✦';
+      return '<div class="znic'+(n.type==='napiecie'?' ten':'')+'">'+(qa?lastName(qa.a):'?')+' '+sym+' '+(qb?lastName(qb.a):'?')+' — <i>'+esc(n.glosa)+'</i></div>';
+    }).join('');
+  }
+  show('<div class="card dark"><div class="kick l">Twój zielnik — prywatna antologia</div>'+items+niciH+
+    '<p class="note">Cień — człowiek za słowem — odsłania się tylko przy cytatach, którym dałeś własny margines.</p>'+
+    '<button class="btn small" id="konst">zobacz konstelację</button>'+
+    '<button class="btn small ghost" id="qual">podgląd: jakość cytatów</button>'+
+    '<button class="btn small ghost" id="back">wróć do Wyroczni</button></div>');
+  Array.prototype.forEach.call(app.querySelectorAll('[data-cien]'), function(b){
+    b.addEventListener('click', function(){
+      var d=document.getElementById('cien'+b.getAttribute('data-cien'));
+      if(d){ d.style.display='block'; b.style.display='none'; }
+    });
+  });
+  document.getElementById('konst').addEventListener('click', screenKonstelacja);
+  document.getElementById('qual').addEventListener('click', screenQuality);
+  document.getElementById('back').addEventListener('click', function(){ S.di=0; S.mood=[0,0,0,0,0]; screenDicho(); });
+}
+
+function pseudoBase(id){ return ((id*37)%11) - 5; }
+function screenQuality(){
+  var rows = CORPUS.map(function(q){
+    var kept = inZielnik(q.id)?1:0, fl = S.flagged[q.id]?1:0;
+    return {q:q, kept:kept, fl:fl, score:pseudoBase(q.id)+3*kept-5*fl};
+  });
+  rows.sort(function(a,b){ return a.score-b.score; });
+  var html = rows.map(function(r,idx){
+    var cull = idx<4 || r.fl;
+    var tag = cull?' <span style="color:#cf9a9a;font-size:9.5px;letter-spacing:.06em">KANDYDAT DO USUNIĘCIA</span>':'';
+    var ut = r.fl?' <span style="color:#8a93c4">· Ty: zgłoszony</span>':(r.kept?' <span style="color:var(--brass)">· Ty: w konstelacji</span>':'');
+    var tx = r.q.t.length>50 ? r.q.t.slice(0,50)+'…' : r.q.t;
+    return '<div class="qrow"><span class="qsc">'+r.score+'</span><span class="qtx">„'+tx+'" <i style="opacity:.6">— '+lastName(r.q.a)+'</i>'+tag+ut+'</span></div>';
+  }).join('');
+  show('<div class="card dark"><div class="kick l">Jakość korpusu — podgląd redaktora</div>'+
+    '<p class="note">SYMULACJA. Wynik = bazowe głosy społeczności (tu udawane) + sygnały od Ciebie: „w konstelacji" podbija cytat, „zgłoszony do usunięcia" mocno go obniża. Najniższe i zgłoszone trafiają na górę jako kandydaci do skasowania. W docelowej aplikacji ten panel jest dostępny tylko dla redaktora (admin), nie u użytkownika — tutaj dla podglądu.</p>'+
+    '<div>'+html+'</div>'+
+    '<button class="btn small ghost" id="back" style="margin-top:14px">wróć</button></div>');
+  document.getElementById('back').addEventListener('click', screenZielnik);
+}
+
+// ---------- KONSTELACJA ----------
+function layoutStars(){
+  var n=S.zielnik.length;
+  var P=S.zielnik.map(function(q,i){
+    var x=200 + 120*((q.v[0]+q.v[2])/2) + ((i*53)%18 - 9);
+    var y=205 - 120*((q.v[4]+q.v[3])/2) + ((i*71)%18 - 9);
+    return {x:x,y:y};
+  });
+  var MIN=58;
+  for(var it=0; it<140; it++){
+    for(var i=0;i<n;i++) for(var j=i+1;j<n;j++){
+      var dx=P[j].x-P[i].x, dy=P[j].y-P[i].y, d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      if(d<MIN){ var pu=(MIN-d)/2, ux=dx/d, uy=dy/d; P[i].x-=ux*pu; P[i].y-=uy*pu; P[j].x+=ux*pu; P[j].y+=uy*pu; }
+    }
+    for(var k=0;k<n;k++){ P[k].x=Math.max(50,Math.min(350,P[k].x)); P[k].y=Math.max(62,Math.min(352,P[k].y)); }
+  }
+  var pos={}; S.zielnik.forEach(function(q,i){ pos[q.id]=P[i]; });
+  return pos;
+}
+function findTowers(){
+  var ids = S.zielnik.map(function(q){return q.id;});
+  var adj = {}; ids.forEach(function(id){ adj[id]=[]; });
+  S.nici.forEach(function(n){ if(n.type!=='napiecie' && adj[n.a]!==undefined && adj[n.b]!==undefined){ adj[n.a].push(n.b); adj[n.b].push(n.a); } });
+  var seen={}, comps=[];
+  ids.forEach(function(id){
+    if(seen[id]) return; var stack=[id], comp=[]; seen[id]=1;
+    while(stack.length){ var x=stack.pop(); comp.push(x); adj[x].forEach(function(y){ if(!seen[y]){seen[y]=1; stack.push(y);} }); }
+    if(comp.length>=3) comps.push(comp);
+  });
+  var out=[];
+  comps.forEach(function(comp){
+    for(var k=0;k<5;k++){ var mn=9,mx=-9; comp.forEach(function(id){ var q=qById(id); mn=Math.min(mn,q.v[k]); mx=Math.max(mx,q.v[k]); }); if(mn<=-0.4 && mx>=0.4){ out.push({comp:comp, axis:k}); return; } }
+  });
+  return out;
+}
+function przFor(axis){ var pool=[]; for(var i=0;i<PRZESILENIA.length;i++) if(PRZESILENIA[i].axis===axis) pool.push(PRZESILENIA[i]); if(pool.length===0) pool=PRZESILENIA; return pick(pool); }
+
+function screenKonstelacja(){
+  S.link=[]; S.linkTyp=null;
+  if(S.zielnik.length===0){
+    show('<div class="card dark"><div class="kick l">Konstelacja</div><h1 class="title">Twoje niebo jest jeszcze ciemne.</h1><p class="lead">Wróć do Wyroczni i zachowaj kilka gwiazd. Z nich zbudujesz mapę własnego rozumienia.</p><button class="btn brass" id="back">Do Wyroczni</button></div>');
+    document.getElementById('back').addEventListener('click', function(){ S.di=0; S.mood=[0,0,0,0,0]; screenDicho(); });
+    return;
+  }
+  renderKonstelacja(false, null);
+}
+
+function renderKonstelacja(linkMode, msg){
+  var W=400,H=412;
+  var pos = layoutStars();
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  svg+='<defs><radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#c4995a" stop-opacity="0.45"/><stop offset="100%" stop-color="#c4995a" stop-opacity="0"/></radialGradient></defs>';
+  for(var f=0;f<7;f++){ svg+='<circle cx="'+(40+f*52)+'" cy="'+(30+(f*73)%360)+'" r="1.6" fill="#39435e" opacity="0.55"/>'; }
+  S.nici.forEach(function(n){
+    var pa=pos[n.a], pb=pos[n.b]; if(!pa||!pb) return;
+    if(n.type==='napiecie'){
+      svg+='<line x1="'+pa.x+'" y1="'+(pa.y-3)+'" x2="'+pb.x+'" y2="'+(pb.y-3)+'" stroke="#8a93c4" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.9"/>';
+      svg+='<line x1="'+pa.x+'" y1="'+(pa.y+3)+'" x2="'+pb.x+'" y2="'+(pb.y+3)+'" stroke="#5e68a0" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.9"/>';
+    } else {
+      svg+='<line x1="'+pa.x+'" y1="'+pa.y+'" x2="'+pb.x+'" y2="'+pb.y+'" stroke="#c4995a" stroke-width="1.2" opacity="0.55"/>';
+    }
+  });
+  var towers=findTowers();
+  towers.forEach(function(tw){
+    var comp=tw.comp; var cx=0,cy=0; comp.forEach(function(id){ cx+=pos[id].x; cy+=pos[id].y; }); cx/=comp.length; cy/=comp.length;
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="40" fill="url(#glow)"/>';
+    svg+='<g data-tower="'+comp.join('_')+'" data-axis="'+tw.axis+'" style="cursor:pointer"><circle cx="'+cx+'" cy="'+cy+'" r="7" fill="#1a1f30" stroke="#c4995a" stroke-width="1.4"/><circle cx="'+cx+'" cy="'+cy+'" r="2.3" fill="#c4995a"/><text x="'+cx+'" y="'+(cy+20)+'" text-anchor="middle" style="font-family:Spectral;font-size:10px;fill:#c4995a;letter-spacing:.06em">Wieża · '+AXES[tw.axis]+'</text></g>';
+  });
+  S.zielnik.forEach(function(q){
+    var p=pos[q.id]; var dim=(S.dimmed===q.id)?' star-dim':''; var sel=S.link.indexOf(q.id)>=0;
+    svg+='<g class="star'+dim+'" data-star="'+q.id+'" style="cursor:pointer">';
+    svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="14" fill="#c4995a" opacity="0"/>';
+    svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(sel?8:6)+'" fill="'+(sel?'#fff3dc':'#f3e7cf')+'" stroke="'+(sel?'#fff3dc':'#c4995a')+'" stroke-width="'+(sel?2:1.3)+'"/>';
+    svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="2.1" fill="#9a7236"/>';
+    var ly = p.y>205 ? p.y+18 : p.y-12; svg+='<text x="'+p.x+'" y="'+ly+'" text-anchor="middle" class="starlbl">'+lastName(q.a)+'</text>';
+    svg+='</g>';
+  });
+  svg+='</svg>';
+
+  var controls;
+  if(linkMode){
+    var inner;
+    if(S.link.length<2){
+      inner='<div class="note">'+(S.link.length===1?'Jedna gwiazda wybrana. Dotknij drugiej, z którą rozmawia.':'Dotknij dwóch gwiazd, które chcesz połączyć.')+'</div>';
+    } else if(!S.linkTyp){
+      var qoa=qById(S.link[0]), qob=qById(S.link[1]);
+      var tax=tensionAxis(qoa,qob);
+      inner='<div class="note">Dwie gwiazdy wybrane. Co naprawdę je łączy?</div>'+
+        '<button class="btn small" id="typPok">rymują się — pokrewieństwo</button>'+
+        (tax>=0
+          ? '<button class="btn small" id="typNap" style="border-color:rgba(138,147,196,.5);color:#cdd3ea">kłócą się — napięcie (oś '+AXES[tax]+')</button>'
+          : '<div class="note" style="color:#8a93c4;margin-top:10px">Te dwie raczej nie stoją w sprzeczności — nie widać tu napięcia do wykucia. Łączy je co najwyżej pokrewieństwo.</div>');
+    } else {
+      var lab = S.linkTyp==='napiecie' ? 'Nazwij to napięcie — czego jedno żąda kosztem drugiego?' : 'Dlaczego się rymują? Co mówią jednym głosem?';
+      inner='<div class="note">'+lab+'</div>'+
+        '<textarea id="bind" placeholder="Twoimi słowami. To jest klucz, którego klikanie nie podrobi…"></textarea>'+
+        '<button class="btn small brass" id="dobind">'+(S.linkTyp==='napiecie'?'zwiąż i wejdź w przesilenie':'zwiąż nicią pokrewieństwa')+'</button>';
+    }
+    controls = inner + '<button class="btn small ghost" id="cancel">odłóż wiązanie</button>';
+  } else {
+    controls='<button class="btn small" id="link">połącz nicią</button>'+
+      '<button class="btn small ghost" id="ziel">Twój zielnik</button>'+
+      '<button class="btn small ghost" id="ludzie">spotkaj ludzi</button>'+
+      '<button class="btn small ghost" id="back">wróć do Wyroczni</button>';
+  }
+  var hint = '<br>Każda gwiazda jest podpisana autorem. Dotknij jej, by zobaczyć pełny cytat.';
+  show('<div class="card dark"><div class="kick l">Twoja konstelacja — mapa rozumienia</div>'+
+    '<div class="mapbox" style="border-radius:12px;overflow:hidden;background:radial-gradient(120% 100% at 50% 30%, #1b2236 0%, #11151f 100%)">'+svg+'</div>'+
+    '<p class="note">Złota pleciona Wieża to sens ze zgody. Chłodna, rozszczepiona nić to napięcie, które sam nazwałeś. Przesilenia nie biorą się z klikania — rodzą się dopiero, gdy poprowadzisz nić napięcia między dwiema gwiazdami i ją nazwiesz.'+hint+'</p>'+
+    controls+'</div>');
+
+  Array.prototype.forEach.call(app.querySelectorAll('[data-star]'), function(g){
+    g.addEventListener('click', function(){ onStar(parseInt(g.getAttribute('data-star'),10), linkMode); });
+  });
+  Array.prototype.forEach.call(app.querySelectorAll('[data-tower]'), function(g){
+    g.addEventListener('click', function(){ openTower(g.getAttribute('data-tower'), parseInt(g.getAttribute('data-axis'),10)); });
+  });
+  if(document.getElementById('link')) document.getElementById('link').addEventListener('click', function(){ S.link=[]; S.linkTyp=null; renderKonstelacja(true,null); });
+  if(document.getElementById('cancel')) document.getElementById('cancel').addEventListener('click', function(){ S.link=[]; S.linkTyp=null; renderKonstelacja(false,null); });
+  if(document.getElementById('back')) document.getElementById('back').addEventListener('click', function(){ S.di=0; S.mood=[0,0,0,0,0]; screenDicho(); });
+  if(document.getElementById('ziel')) document.getElementById('ziel').addEventListener('click', screenZielnik);
+  if(document.getElementById('ludzie')) document.getElementById('ludzie').addEventListener('click', screenLudzie);
+  if(document.getElementById('typPok')) document.getElementById('typPok').addEventListener('click', function(){ S.linkTyp='pokrewienstwo'; renderKonstelacja(true,null); });
+  if(document.getElementById('typNap')) document.getElementById('typNap').addEventListener('click', function(){ S.linkTyp='napiecie'; renderKonstelacja(true,null); });
+  if(document.getElementById('dobind')) document.getElementById('dobind').addEventListener('click', function(){
+    var bx=document.getElementById('bind'); var g=(bx.value||'').trim();
+    if(!g){ bx.placeholder='Bez własnych słów nić się nie zawiąże — to jest właśnie ten wysiłek.'; bx.focus(); return; }
+    var a=S.link[0], b=S.link[1], qa=qById(a), qb=qById(b);
+    if(S.linkTyp==='napiecie'){
+      var ax=tensionAxis(qa,qb); if(ax<0) ax=axisOfMaxDiff(qa,qb);
+      S.nici.push({a:a, b:b, glosa:g, type:'napiecie'});
+      S.link=[]; S.linkTyp=null;
+      screenPrzesilenie(qa, qb, ax);
+    } else {
+      S.nici.push({a:a, b:b, glosa:g, type:'pokrewienstwo'});
+      S.link=[]; S.linkTyp=null; renderKonstelacja(false,null);
+    }
+  });
+}
+
+function onStar(id, linkMode){
+  if(linkMode){
+    if(S.linkTyp) return; // w trakcie nazywania — nie zmieniaj wyboru
+    var k=S.link.indexOf(id);
+    if(k>=0) S.link.splice(k,1);
+    else if(S.link.length<2) S.link.push(id);
+    renderKonstelacja(true, null);
+    return;
+  }
+  var q=qById(id);
+  renderKonstelacja(false, null);
+  var box=app.querySelector('.mapbox');
+  var info=document.createElement('div'); info.className='glosa'; info.style.marginTop='12px';
+  info.innerHTML='„'+q.t+'" <span style="display:block;font-size:11px;color:var(--brass);margin-top:6px">— '+q.a+'</span>';
+  box.parentNode.insertBefore(info, box.nextSibling);
+}
+
+function openTower(key, axis){
+  var ids=key.split('_').map(function(x){return parseInt(x,10);});
+  var authors=ids.map(function(id){ var q=corpusById(id); return q?lastName(q.a):''; }).filter(Boolean);
+  var lead = authors.join(', ');
+  var meta = pick(TOWER_GLOSY[axis]);
+  show('<div class="card dark"><div class="kick l">Wieża Sensu · oś '+AXES[axis]+'</div>'+
+    '<div class="quote" style="font-size:19px">„'+lead+' mówią jednym głosem: '+meta+'"</div>'+
+    '<p class="note">Wyłoniła się, bo sam połączyłeś nićmi co najmniej trzy cytaty z przeciwnych biegunów osi „'+AXES[axis]+'". To sens, którego żaden z nich nie niósł osobno — inny dla każdej osi, którą zwiążesz.</p>'+
+    '<textarea id="meta" placeholder="Dopisz własną meta-glosę…"></textarea>'+
+    '<button class="btn brass" id="back">wróć do konstelacji</button></div>');
+  document.getElementById('back').addEventListener('click', function(){ renderKonstelacja(false,null); });
+}
+
+function screenPrzesilenie(a, b, axis){
+  var sc = przFor(axis);
+  var i=0;
+  function render(){
+    if(i<sc.beats.length){
+      var s=sc.beats[i];
+      show('<div class="card dark"><div class="kick" style="color:#8a93c4">'+s.kick+'</div>'+
+        '<div style="height:120px;border-radius:12px;margin:6px 0 16px;background:linear-gradient(180deg,#26304a,#161b29)"></div>'+
+        '<p class="lead" style="font-family:Spectral;font-style:italic;font-size:18px;color:#e7e2d4;text-align:center">'+s.txt+'</p>'+
+        '<button class="btn brass" id="nx">'+s.btn+'</button></div>');
+      document.getElementById('nx').addEventListener('click', function(){ i++; render(); });
+    } else {
+      show('<div class="card dark"><div class="kick" style="color:#8a93c4">Wybór jest jeden i nieodwracalny</div>'+
+        '<p class="lead" style="text-align:center;font-style:italic">'+sc.name+'</p>'+
+        '<div class="choice" data-c="a">Ocal '+sc.a+'</div>'+
+        '<div class="choice" data-c="b">Ocal '+sc.b+'</div></div>');
+      Array.prototype.forEach.call(app.querySelectorAll('[data-c]'), function(c){
+        c.addEventListener('click', function(){ pointa(c.getAttribute('data-c')); });
+      });
+    }
+  }
+  function pointa(which){
+    var keepLabel = which==='a'?sc.a:sc.b;
+    var sacLabel  = which==='a'?sc.b:sc.a;
+    var sacQuote  = which==='a'?b:a;
+    S.dimmed = sacQuote.id;
+    S.prz.push({name:sc.name, keep:keepLabel});
+    show('<div class="card"><div class="kick">Pointa — lustro, nie ocena</div>'+
+      '<div class="glosa" style="font-size:17px">„Gdy '+sc.a+' i '+sc.b+' się starły, ocaliłeś '+keepLabel+' kosztem tego, co znaczyło '+sacLabel+'. '+sc.pointa+' To też jesteś Ty."</div>'+
+      '<p class="note">Żadnego „dobrze / źle" ani wyniku — tylko kształt Twoich wartości, gdy musiały wybrać. Na mapie została nić napięcia, którą sam nazwałeś, a poświęcona gwiazda przygasła. Wyboru nie da się cofnąć.</p>'+
+      '<button class="btn brass" id="back">wróć na mapę</button></div>');
+    document.getElementById('back').addEventListener('click', function(){ renderKonstelacja(false,null); });
+  }
+  render();
+}
+
+function screenLudzie(){
+  var people = [
+    {nm:'Zmierzch', v:S.odcisk.map(function(x){return clamp(x+0.15);}), ln:'„Czytam noce, nie dni."'},
+    {nm:'Heraklit z Gdyni', v:[ -0.6, S.odcisk[1], 0.2, -0.6, S.odcisk[4] ], ln:'„Liczę fale i wiersze tym samym ołówkiem."'},
+    {nm:'Kontra', v:[ S.odcisk[0], S.odcisk[1], S.odcisk[2], S.odcisk[3], clamp(-(S.odcisk[4]||0.7)) ], ln:'„Jeśli cię to ukoiło, to nie była prawda."'}
+  ];
+  var t=S.odcisk;
+  people.forEach(function(p){ p.d=distv(t,p.v); });
+  var minD=Math.min.apply(null, people.map(function(p){return p.d;}));
+  var cards = people.map(function(p){
+    var tag = (p.d===minD)?'Lustro':((p.v[4]*t[4]<0)?'Dopełnienie — napięcie':'Dopełnienie — inny świat');
+    return '<div class="person"><div><span class="nm">'+p.nm+'</span><span class="tag">'+tag+'</span></div>'+
+      '<div class="ln">'+p.ln+'</div>'+
+      '<button class="btn small brass" data-p="'+p.nm+'">napisz — płatna brama</button></div>';
+  }).join('');
+  show('<div class="card dark"><div class="banner">SYMULACJA. W prototypie nie ma jeszcze prawdziwej sieci — te osoby są policzone względem Twojego odcisku, żeby pokazać, jak działa dopasowanie po wrażliwości.</div>'+
+    '<div class="kick l">Ludzie, którzy czytają świat jak Ty</div>'+cards+
+    '<button class="btn small ghost" id="back">wróć do konstelacji</button></div>');
+  Array.prototype.forEach.call(app.querySelectorAll('[data-p]'), function(b){
+    b.addEventListener('click', function(){
+      show('<div class="card"><div class="kick">Pay-to-connect</div><h1 class="title">Inicjowanie rozmowy 1:1 jest za płatną bramą.</h1>'+
+        '<p class="lead">To nie jest sposób na zarabianie kosztem nieśmiałych — to filtr intencji. Kto płaci, naprawdę chce rozmawiać, a nie zaczepia. Rozmowa zaczyna się od wspólnego cytatu, nie od pustego pola.</p>'+
+        '<button class="btn brass" id="back">rozumiem, wróć</button></div>');
+      document.getElementById('back').addEventListener('click', screenLudzie);
+    });
+  });
+  document.getElementById('back').addEventListener('click', function(){ renderKonstelacja(false,null); });
+}
+
+screenIntro();
+</script>
+</body>
+</html>
