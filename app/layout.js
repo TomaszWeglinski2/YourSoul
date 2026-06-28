@@ -1,4 +1,5 @@
 import { Spectral, Inter } from "next/font/google";
+import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 const spectral = Spectral({
@@ -25,7 +26,9 @@ export default function RootLayout({ children }) {
       lang="pl"
       className={`${spectral.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
