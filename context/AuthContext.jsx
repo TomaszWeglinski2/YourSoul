@@ -48,7 +48,8 @@ export function AuthProvider({ children }) {
       return { ok: false, error: error.message };
     }
 
-    if (data.user) {
+    // Profil tworzy trigger w bazie; upsert tylko gdy od razu mamy sesję.
+    if (data.session && data.user) {
       await supabase.from("profiles").upsert(
         { id: data.user.id },
         { onConflict: "id", ignoreDuplicates: true }

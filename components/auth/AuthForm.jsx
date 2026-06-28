@@ -29,32 +29,35 @@ export function AuthForm({ mode = "login" }) {
     setError("");
     setInfo("");
 
-    if (isRegister) {
-      const result = await signUp(email, password);
+    try {
+      if (isRegister) {
+        const result = await signUp(email, password);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        if (result.needsConfirmation) {
+          setInfo(
+            "Konto utworzone. Sprawdź e-mail i potwierdź rejestrację, potem się zaloguj."
+          );
+          return;
+        }
+        router.push(returnTo);
+        return;
+      }
+
+      const result = await signIn(email, password);
       if (!result.ok) {
         setError(result.error);
-        setLoading(false);
         return;
       }
-      if (result.needsConfirmation) {
-        setInfo(
-          "Konto utworzone. Sprawdź e-mail i potwierdź rejestrację, potem się zaloguj."
-        );
-        setLoading(false);
-        return;
-      }
+
       router.push(returnTo);
-      return;
-    }
-
-    const result = await signIn(email, password);
-    if (!result.ok) {
-      setError(result.error);
+    } catch {
+      setError("Nie udało się połączyć z serwerem. Spróbuj ponownie.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push(returnTo);
   }
 
   return (
@@ -98,7 +101,7 @@ export function AuthForm({ mode = "login" }) {
           {info ? (
             <p className="font-sans text-xs text-mist">{info}</p>
           ) : null}
-          <BrassButton disabled={loading} className="mt-0">
+          <BrassButton type="submit" disabled={loading} className="mt-0">
             {loading
               ? "Chwila…"
               : isRegister

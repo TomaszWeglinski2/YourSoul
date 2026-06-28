@@ -75,10 +75,16 @@ export function JourneyCard({ children, dark = false, className = "" }) {
   );
 }
 
-export function BrassButton({ children, disabled, onClick, className = "" }) {
+export function BrassButton({
+  children,
+  disabled,
+  onClick,
+  className = "",
+  type = "button",
+}) {
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`mt-2.5 block w-full rounded-[11px] border border-brass bg-brass px-4 py-3.5 text-center font-sans text-sm text-[#fff8ec] transition-all duration-150 hover:bg-brassdeep hover:-translate-y-px disabled:pointer-events-none disabled:opacity-50 ${className}`}
