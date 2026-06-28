@@ -8,6 +8,7 @@ import {
   clearPendingInviteCode,
   claimInviteCode,
   storePendingInviteCode,
+  validateInviteCode,
 } from "@/lib/referralData";
 import {
   BrassButton,
@@ -18,7 +19,7 @@ import {
 export function AuthForm({ mode = "login" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -37,9 +38,14 @@ export function AuthForm({ mode = "login" }) {
     }
   }, [inviteFromUrl]);
 
-  async function applyInviteAfterAuth() {
+  async function applyInviteAfterAuth({ required = false } = {}) {
     const code = inviteCode.trim();
-    if (!code) return { ok: true };
+    if (!code) {
+      if (required) {
+        return { ok: false, error: "Kod zaproszenia jest wymagany." };
+      }
+      return { ok: true };
+    }
 
     const result = await claimInviteCode(code);
     if (result.ok) {
@@ -59,24 +65,44 @@ export function AuthForm({ mode = "login" }) {
 
     try {
       if (isRegister) {
+        const code = inviteCode.trim();
+        if (!code) {
+          setError("Your Soul jest dostępne tylko na zaproszenie — podaj kod.");
+          return;
+        }
+
+        const validation = await validateInviteCode(code);
+        if (!validation.ok) {
+          setError(validation.error ?? "Nie udało się sprawdzić kodu.");
+          return;
+        }
+        if (!validation.valid) {
+          setError(validation.error ?? "Kod niedostępny lub już wykorzystany.");
+          return;
+        }
+
+        storePendingInviteCode(code);
+
         const result = await signUp(email, password);
         if (!result.ok) {
           setError(result.error);
           return;
         }
         if (result.needsConfirmation) {
-          if (inviteCode.trim()) {
-            storePendingInviteCode(inviteCode);
-          }
           setInfo(
-            "Konto utworzone. Sprawdź e-mail — po logowaniu aktywujemy kod zaproszenia."
+            "Konto utworzone. Potwierdź e-mail, zaloguj się tym samym kodem zaproszenia — bez niego droga pozostaje zamknięta."
           );
           return;
         }
 
-        const inviteAfterSignup = await applyInviteAfterAuth();
-        if (!inviteAfterSignup.ok && inviteAfterSignup.error) {
-          setInfo(`Konto gotowe. Kod: ${inviteAfterSignup.error}`);
+        const inviteAfterSignup = await applyInviteAfterAuth({ required: true });
+        if (!inviteAfterSignup.ok) {
+          await signOut();
+          setError(
+            inviteAfterSignup.error ??
+              "Nie udało się aktywować kodu. Spróbuj ponownie z ważnym zaproszeniem."
+          );
+          return;
         }
 
         router.push(returnTo);
@@ -110,9 +136,16 @@ export function AuthForm({ mode = "login" }) {
         </h1>
         <p className="mb-5 font-sans text-sm leading-relaxed text-mist">
           {isRegister
-            ? "Konto pozwala zapisać odcisk, konstelację i marginesy."
+            ? "Serwis jest dostępny wyłącznie na zaproszenie kogoś z tej społeczności. Kod otrzymujesz od osoby, która już przeszła Wrota."
             : "Zaloguj się, aby zapisywać postęp w bazie."}
         </p>
+
+        {isRegister ? (
+          <p className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 px-3 py-2.5 font-sans text-xs leading-relaxed text-mist">
+            Bez ważnego kodu zaproszenia nie można utworzyć konta. Kod wiąże się z
+            Tobą dopiero po przejściu Wrót — do tego czasu czeka w oczekiwaniu.
+          </p>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
@@ -135,14 +168,23 @@ export function AuthForm({ mode = "login" }) {
             className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-sans text-sm text-[#ece6d8] placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
           />
           {isRegister ? (
-            <input
-              type="text"
-              value={inviteCode}
-              onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
-              placeholder="Kod zaproszenia (opcjonalnie)"
-              autoComplete="off"
-              className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-mono text-sm tracking-widest text-[#ece6d8] placeholder:font-sans placeholder:tracking-normal placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
-            />
+            <>
+              <label className="font-sans text-[11px] uppercase tracking-[0.12em] text-brass">
+                Kod zaproszenia
+              </label>
+              <input
+                type="text"
+                required
+                minLength={4}
+                value={inviteCode}
+                onChange={(event) =>
+                  setInviteCode(event.target.value.toUpperCase())
+                }
+                placeholder="np. AB12CD34"
+                autoComplete="off"
+                className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-mono text-sm tracking-widest text-[#ece6d8] placeholder:font-sans placeholder:tracking-normal placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
+              />
+            </>
           ) : null}
           {error ? (
             <p className="font-sans text-xs text-tension">{error}</p>
@@ -150,7 +192,11 @@ export function AuthForm({ mode = "login" }) {
           {info ? (
             <p className="font-sans text-xs text-mist">{info}</p>
           ) : null}
-          <BrassButton type="submit" disabled={loading} className="mt-0">
+          <BrassButton
+            type="submit"
+            disabled={loading || (isRegister && !inviteCode.trim())}
+            className="mt-0"
+          >
             {loading
               ? "Chwila…"
               : isRegister

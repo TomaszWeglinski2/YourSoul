@@ -33,6 +33,11 @@ const STATUS_LABELS = {
   revoked: "cofnięty",
 };
 
+const TIER_LABELS = {
+  regular: "zwykły",
+  trusted: "zaufany",
+};
+
 export function ReferralsView() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -135,7 +140,10 @@ export function ReferralsView() {
     ? new Date(status.novice_until)
     : null;
   const stillNovice =
-    noviceUntil && noviceUntil.getTime() > Date.now();
+    status?.wrota_completed_at &&
+    !status?.can_create_codes &&
+    noviceUntil &&
+    noviceUntil.getTime() > Date.now();
 
   return (
     <JourneyShell>
@@ -147,9 +155,11 @@ export function ReferralsView() {
           Twoje zaproszenia
         </h1>
         <p className="mb-4 font-sans text-xs leading-relaxed text-mistsoft">
-          Kod wiąże się dopiero, gdy zaproszony przejdzie Wrota. Pula: 3 / 5 / 8
-          wg zaufania, +2 za ugruntowanego, maks. 10. Okres nowicjusza: 30 dni po
-          Wrótach.
+          Kod wiąże się dopiero, gdy zaproszony przejdzie Wrota. Twoje wejście:{" "}
+          <strong className="text-brass">
+            {status?.invite_access_tier === "trusted" ? "zaufane" : "zwykłe"}
+          </strong>
+          . Pula 3/5/8+cap10; kody, które sam tworzysz, są zawsze zwykłe.
         </p>
 
         {error ? (
@@ -185,10 +195,16 @@ export function ReferralsView() {
 
         {stillNovice ? (
           <p className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 px-3 py-2 font-sans text-xs text-mist">
-            Okres nowicjusza — zaproszenia odblokują się{" "}
+            Okres nowicjusza (kod zwykły) — zaproszenia odblokują się{" "}
             {formatDate(status.novice_until)}.
           </p>
-        ) : status?.can_create_codes ? (
+        ) : status?.invite_access_tier === "trusted" && status?.can_create_codes ? (
+          <p className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 px-3 py-2 font-sans text-xs text-mist">
+            Masz status zaufany — możesz zapraszać od razu po Wrótach.
+          </p>
+        ) : null}
+
+        {status?.can_create_codes ? (
           <BrassButton
             disabled={creating || (status?.invite_codes_remaining ?? 0) <= 0}
             onClick={() => void handleCreateCode()}
@@ -196,11 +212,11 @@ export function ReferralsView() {
           >
             {creating ? "Generuję…" : "Wygeneruj kod zaproszenia"}
           </BrassButton>
-        ) : (
+        ) : !stillNovice ? (
           <p className="mb-4 font-sans text-xs italic text-mistsoft">
             Najpierw przejdź Wrota, aby zapraszać innych.
           </p>
-        )}
+        ) : null}
 
         {copied ? (
           <p className="mb-3 font-sans text-xs text-brass">

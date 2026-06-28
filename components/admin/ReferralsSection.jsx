@@ -7,13 +7,25 @@ import {
   AdminKick,
 } from "@/components/admin/AdminShell";
 
+const TIER_LABELS = {
+  regular: "zwykłe (30 dni)",
+  trusted: "zaufane (od razu)",
+};
+
 export function ReferralsSection({ password }) {
   const [flags, setFlags] = useState([]);
   const [journal, setJournal] = useState([]);
+  const [adminCodes, setAdminCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const [codeTier, setCodeTier] = useState("regular");
+  const [codeCount, setCodeCount] = useState(1);
+  const [userId, setUserId] = useState("");
+  const [noviceDate, setNoviceDate] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,6 +46,10 @@ export function ReferralsSection({ password }) {
 
       setFlags(data.flags ?? []);
       setJournal(data.journal ?? []);
+      setAdminCodes(data.adminCodes ?? []);
+      if (data.adminCodesError) {
+        setError(data.adminCodesError);
+      }
     } catch {
       setError("Błąd połączenia.");
     } finally {
@@ -44,6 +60,19 @@ export function ReferralsSection({ password }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function postAction(payload) {
+    const response = await fetch("/api/admin/referrals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, ...payload }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? "Operacja nie powiodła się.");
+    }
+    return data;
+  }
 
   async function handleRunNightly() {
     setRunning(true);
@@ -65,21 +94,62 @@ export function ReferralsSection({ password }) {
 
       setMessage(JSON.stringify(data.result));
       await load();
-    } catch {
-      setError("Błąd połączenia.");
+    } catch (err) {
+      setError(err.message ?? "Błąd połączenia.");
     } finally {
       setRunning(false);
     }
   }
 
-  async function reviewFlag(flagId) {
-    const response = await fetch("/api/admin/referrals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, action: "review_flag", flagId }),
-    });
-    if (response.ok) {
+  async function handleCreateCodes() {
+    setCreating(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const data = await postAction({
+        action: "create_codes",
+        tier: codeTier,
+        count: codeCount,
+      });
+      const codes = (data.codes ?? []).map((row) => row.code).join(", ");
+      setMessage(`Wygenerowano: ${codes}`);
       await load();
+    } catch (err) {
+      setError(err.message ?? "Nie udało się utworzyć kodów.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleUserAccess(mode) {
+    if (!userId.trim()) {
+      setError("Podaj UUID użytkownika.");
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      await postAction({
+        action: "set_user_access",
+        userId: userId.trim(),
+        mode,
+        noviceUntil: noviceDate || undefined,
+      });
+      setMessage(`Zaktualizowano użytkownika (${mode}).`);
+    } catch (err) {
+      setError(err.message ?? "Nie udało się zaktualizować użytkownika.");
+    }
+  }
+
+  async function reviewFlag(flagId) {
+    try {
+      await postAction({ action: "review_flag", flagId });
+      await load();
+    } catch {
+      setError("Nie udało się oznaczyć flagi.");
     }
   }
 
@@ -87,11 +157,74 @@ export function ReferralsSection({ password }) {
     <AdminCard>
       <AdminKick>Polecenia i zaufanie</AdminKick>
       <p className="mb-4 font-sans text-sm leading-relaxed text-inksoft">
-        Nocne zadanie: ugruntowanie (+3 zaufania), kary za bany, przeliczenie pul
-        3/5/8+cap10, skan nadużyć. Ban użytkownika: ustaw{" "}
-        <code className="text-xs">profiles.is_banned = true</code> w SQL lub
-        przez API.
+        Dwa typy zaproszeń: <strong>zwykłe</strong> (30 dni po Wrótach) i{" "}
+        <strong>zaufane</strong> (od razu można zapraszać). Kody admina nie
+        wymagają zapraszającego w drzewie.
       </p>
+
+      <h2 className="mb-2 font-serif text-lg text-ink">Generuj kody ręcznie</h2>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <select
+          value={codeTier}
+          onChange={(e) => setCodeTier(e.target.value)}
+          className="rounded-[10px] border border-brass/35 bg-white/40 px-3 py-2 font-sans text-sm"
+        >
+          <option value="regular">Zwykłe — 30 dni po Wrótach</option>
+          <option value="trusted">Zaufane — zaproszenia od razu</option>
+        </select>
+        <input
+          type="number"
+          min={1}
+          max={20}
+          value={codeCount}
+          onChange={(e) => setCodeCount(Number(e.target.value))}
+          className="w-20 rounded-[10px] border border-brass/35 bg-white/40 px-3 py-2 font-sans text-sm"
+        />
+        <AdminButton disabled={creating} onClick={() => void handleCreateCodes()}>
+          {creating ? "Generuję…" : "Generuj kody"}
+        </AdminButton>
+      </div>
+
+      {adminCodes.length > 0 ? (
+        <ul className="mb-4 max-h-32 space-y-1 overflow-y-auto font-mono text-[11px] text-inksoft">
+          {adminCodes.map((row) => (
+            <li key={row.id}>
+              {row.code} · {TIER_LABELS[row.tier] ?? row.tier} · {row.status}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <h2 className="mb-2 font-serif text-lg text-ink">Okres próbny użytkownika</h2>
+      <div className="mb-4 flex flex-col gap-2">
+        <input
+          type="text"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          placeholder="UUID użytkownika"
+          className="w-full rounded-[10px] border border-brass/35 bg-white/40 px-3 py-2 font-sans text-sm"
+        />
+        <input
+          type="datetime-local"
+          value={noviceDate}
+          onChange={(e) => setNoviceDate(e.target.value)}
+          className="w-full rounded-[10px] border border-brass/35 bg-white/40 px-3 py-2 font-sans text-sm"
+        />
+        <div className="flex flex-wrap gap-2">
+          <AdminButton onClick={() => void handleUserAccess("unlock_now")}>
+            Odblokuj teraz
+          </AdminButton>
+          <AdminButton onClick={() => void handleUserAccess("trusted")}>
+            Ustaw jako zaufany
+          </AdminButton>
+          <AdminButton
+            disabled={!noviceDate}
+            onClick={() => void handleUserAccess("novice_until")}
+          >
+            Ustaw datę końca próby
+          </AdminButton>
+        </div>
+      </div>
 
       <AdminButton
         disabled={running}
@@ -102,7 +235,7 @@ export function ReferralsSection({ password }) {
       </AdminButton>
 
       {message ? (
-        <p className="mb-3 font-mono text-[10px] text-inksoft">{message}</p>
+        <p className="mb-3 font-sans text-xs text-inksoft">{message}</p>
       ) : null}
       {error ? (
         <p className="mb-3 font-sans text-xs text-tension">{error}</p>

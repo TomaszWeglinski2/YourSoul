@@ -6,7 +6,7 @@
 --
 -- Zasady:
 --   • Kod zaproszenia realizuje się dopiero po Wrótach zaproszonego
---   • Okres nowicjusza: 30 dni od Wrót przed tworzeniem kodów
+--   • Okres nowicjusza: 30 dni od Wrót (kod zwykły) lub od razu (kod zaufany / admin)
 --   • Pula: 3 / 5 / 8 (zaufanie) + 2 za ugruntowanego zaproszonego, cap 10
 --   • Kara przy banie zaproszonego; wszystkie zmiany zaufania → trust_journal
 -- ============================================================
@@ -20,6 +20,12 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS invite_pool integer NOT NUL
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS invite_pool_computed_at timestamptz;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_banned boolean NOT NULL DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banned_at timestamptz;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS invite_access_tier text NOT NULL DEFAULT 'regular';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS novice_until_override timestamptz;
+
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_invite_access_tier_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_invite_access_tier_check
+  CHECK (invite_access_tier IN ('regular', 'trusted'));
 
 -- ------------------------------------------------------------
 -- 2. invite_codes
@@ -27,7 +33,9 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banned_at timestamptz;
 CREATE TABLE IF NOT EXISTS public.invite_codes (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   code text NOT NULL UNIQUE,
-  inviter_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  inviter_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  tier text NOT NULL DEFAULT 'regular',
+  is_admin boolean NOT NULL DEFAULT false,
   status text NOT NULL DEFAULT 'available'
     CHECK (status IN ('available', 'pending_wrota', 'completed', 'revoked')),
   used_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -36,6 +44,14 @@ CREATE TABLE IF NOT EXISTS public.invite_codes (
   revoked_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.invite_codes ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'regular';
+ALTER TABLE public.invite_codes ADD COLUMN IF NOT EXISTS is_admin boolean NOT NULL DEFAULT false;
+ALTER TABLE public.invite_codes ALTER COLUMN inviter_id DROP NOT NULL;
+
+ALTER TABLE public.invite_codes DROP CONSTRAINT IF EXISTS invite_codes_tier_check;
+ALTER TABLE public.invite_codes ADD CONSTRAINT invite_codes_tier_check
+  CHECK (tier IN ('regular', 'trusted'));
 
 CREATE INDEX IF NOT EXISTS idx_invite_codes_inviter
   ON public.invite_codes(inviter_id, status);
@@ -282,6 +298,23 @@ $$;
 -- ------------------------------------------------------------
 -- 8. Realizacja kodu po Wrótach
 -- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.effective_novice_until(p_user_id uuid)
+RETURNS timestamptz
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN p.wrota_completed_at IS NULL THEN NULL
+    WHEN p.invite_access_tier = 'trusted' THEN p.wrota_completed_at
+    WHEN p.novice_until_override IS NOT NULL THEN p.novice_until_override
+    ELSE p.wrota_completed_at + interval '30 days'
+  END
+  FROM public.profiles p
+  WHERE p.id = p_user_id;
+$$;
+
 CREATE OR REPLACE FUNCTION public.finalize_referral_on_wrota(p_user_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -292,10 +325,6 @@ DECLARE
   code_row public.invite_codes%ROWTYPE;
 BEGIN
   IF NOT public.profile_has_wrota(p_user_id) THEN
-    RETURN false;
-  END IF;
-
-  IF EXISTS (SELECT 1 FROM public.referral_edges WHERE invitee_id = p_user_id) THEN
     RETURN false;
   END IF;
 
@@ -310,23 +339,32 @@ BEGIN
     RETURN false;
   END IF;
 
-  IF code_row.inviter_id = p_user_id THEN
+  IF code_row.inviter_id IS NOT NULL AND code_row.inviter_id = p_user_id THEN
     RETURN false;
   END IF;
 
-  INSERT INTO public.referral_edges (inviter_id, invitee_id, invite_code_id)
-  VALUES (code_row.inviter_id, p_user_id, code_row.id);
+  UPDATE public.profiles
+  SET invite_access_tier = code_row.tier
+  WHERE id = p_user_id;
+
+  IF code_row.inviter_id IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM public.referral_edges WHERE invitee_id = p_user_id
+     ) THEN
+    INSERT INTO public.referral_edges (inviter_id, invitee_id, invite_code_id)
+    VALUES (code_row.inviter_id, p_user_id, code_row.id);
+
+    PERFORM public.log_trust_change(
+      code_row.inviter_id,
+      5,
+      'referral_wrota_completed',
+      jsonb_build_object('invitee_id', p_user_id, 'invite_code_id', code_row.id)
+    );
+  END IF;
 
   UPDATE public.invite_codes
   SET status = 'completed', completed_at = now()
   WHERE id = code_row.id;
-
-  PERFORM public.log_trust_change(
-    code_row.inviter_id,
-    5,
-    'referral_wrota_completed',
-    jsonb_build_object('invitee_id', p_user_id, 'invite_code_id', code_row.id)
-  );
 
   RETURN true;
 END;
@@ -367,7 +405,7 @@ AS $$
     WHERE p.id = p_user_id
       AND NOT p.is_banned
       AND public.profile_has_wrota(p.id)
-      AND p.wrota_completed_at <= now() - interval '30 days'
+      AND now() >= public.effective_novice_until(p.id)
   );
 $$;
 
@@ -405,7 +443,7 @@ BEGIN
   END IF;
 
   IF NOT public.can_create_invite_codes(uid) THEN
-    RAISE EXCEPTION 'Zaproszenia odblokowują się 30 dni po Wrótach (i wymagają przejścia drogi).';
+    RAISE EXCEPTION 'Zaproszenia odblokowują się po okresie nowicjusza (30 dni dla kodu zwykłego, od razu dla zaufanego).';
   END IF;
 
   SELECT invite_pool INTO pool FROM public.profiles WHERE id = uid;
@@ -424,8 +462,8 @@ BEGIN
     END IF;
     new_code := public.generate_invite_code_string();
     BEGIN
-      INSERT INTO public.invite_codes (code, inviter_id)
-      VALUES (new_code, uid);
+      INSERT INTO public.invite_codes (code, inviter_id, tier)
+      VALUES (new_code, uid, 'regular');
       EXIT;
     EXCEPTION WHEN unique_violation THEN
       CONTINUE;
@@ -481,7 +519,7 @@ BEGIN
     RAISE EXCEPTION 'Kod niedostępny lub wygasły.';
   END IF;
 
-  IF code_row.inviter_id = uid THEN
+  IF code_row.inviter_id IS NOT NULL AND code_row.inviter_id = uid THEN
     RAISE EXCEPTION 'Nie możesz użyć własnego kodu.';
   END IF;
 
@@ -496,9 +534,39 @@ $$;
 GRANT EXECUTE ON FUNCTION public.create_invite_code() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_invite_code(text) TO authenticated;
 
+-- Walidacja kodu przed rejestracją (bez logowania)
+CREATE OR REPLACE FUNCTION public.validate_invite_code(p_code text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  normalized text;
+BEGIN
+  normalized := upper(trim(p_code));
+  IF length(normalized) < 4 THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.invite_codes ic
+    WHERE ic.code = normalized
+      AND ic.status = 'available'
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.validate_invite_code(text) TO anon, authenticated;
+
 -- ------------------------------------------------------------
 -- 10. Dashboard + publiczne drzewo
+-- (DROP wymagany przy zmianie kolumn RETURNS TABLE)
 -- ------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_my_invite_codes();
+
 CREATE OR REPLACE FUNCTION public.get_my_referral_status()
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -522,7 +590,7 @@ BEGIN
 
   pool := COALESCE(p.invite_pool, 0);
   used := public.count_active_invite_codes(uid);
-  novice_until := p.wrota_completed_at + interval '30 days';
+  novice_until := public.effective_novice_until(uid);
   can_invite := public.can_create_invite_codes(uid);
 
   RETURN jsonb_build_object(
@@ -531,7 +599,8 @@ BEGIN
     'invite_codes_used', used,
     'invite_codes_remaining', GREATEST(0, pool - used),
     'wrota_completed_at', p.wrota_completed_at,
-    'novice_until', CASE WHEN p.wrota_completed_at IS NULL THEN NULL ELSE novice_until END,
+    'invite_access_tier', p.invite_access_tier,
+    'novice_until', novice_until,
     'can_create_codes', can_invite,
     'is_banned', p.is_banned,
     'referrals_completed', (
@@ -549,6 +618,7 @@ CREATE OR REPLACE FUNCTION public.get_my_invite_codes()
 RETURNS TABLE (
   id bigint,
   code text,
+  tier text,
   status text,
   created_at timestamptz,
   used_at timestamptz,
@@ -567,7 +637,7 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  SELECT ic.id, ic.code, ic.status, ic.created_at, ic.used_at, ic.completed_at
+  SELECT ic.id, ic.code, ic.tier, ic.status, ic.created_at, ic.used_at, ic.completed_at
   FROM public.invite_codes ic
   WHERE ic.inviter_id = uid
   ORDER BY ic.created_at DESC
