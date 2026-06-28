@@ -16,11 +16,14 @@ export function ReferralsSection({ password }) {
   const [flags, setFlags] = useState([]);
   const [journal, setJournal] = useState([]);
   const [adminCodes, setAdminCodes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const [codeTier, setCodeTier] = useState("regular");
   const [codeCount, setCodeCount] = useState(1);
@@ -47,8 +50,12 @@ export function ReferralsSection({ password }) {
       setFlags(data.flags ?? []);
       setJournal(data.journal ?? []);
       setAdminCodes(data.adminCodes ?? []);
+      setUsers(data.users ?? []);
       if (data.adminCodesError) {
         setError(data.adminCodesError);
+      }
+      if (data.usersError) {
+        setError((prev) => prev ? `${prev} · ${data.usersError}` : data.usersError);
       }
     } catch {
       setError("Błąd połączenia.");
@@ -123,8 +130,9 @@ export function ReferralsSection({ password }) {
   }
 
   async function handleUserAccess(mode) {
-    if (!userId.trim()) {
-      setError("Podaj UUID użytkownika.");
+    const targetId = selectedUser?.id ?? userId.trim();
+    if (!targetId) {
+      setError("Wybierz użytkownika z listy.");
       return;
     }
 
@@ -134,11 +142,13 @@ export function ReferralsSection({ password }) {
     try {
       await postAction({
         action: "set_user_access",
-        userId: userId.trim(),
+        userId: targetId,
         mode,
         noviceUntil: noviceDate || undefined,
       });
-      setMessage(`Zaktualizowano użytkownika (${mode}).`);
+      setMessage(
+        `Zaktualizowano ${selectedUser?.display_name ?? targetId.slice(0, 8)} (${mode}).`
+      );
     } catch (err) {
       setError(err.message ?? "Nie udało się zaktualizować użytkownika.");
     }
@@ -152,6 +162,16 @@ export function ReferralsSection({ password }) {
       setError("Nie udało się oznaczyć flagi.");
     }
   }
+
+  const filteredUsers = users.filter((row) => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      row.display_name?.toLowerCase().includes(q) ||
+      row.email?.toLowerCase().includes(q) ||
+      row.id.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <AdminCard>
@@ -198,12 +218,59 @@ export function ReferralsSection({ password }) {
       <h2 className="mb-2 font-serif text-lg text-ink">Okres próbny użytkownika</h2>
       <div className="mb-4 flex flex-col gap-2">
         <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="UUID użytkownika"
+          type="search"
+          value={userSearch}
+          onChange={(e) => setUserSearch(e.target.value)}
+          placeholder="Szukaj po nazwie, e-mailu lub UUID"
           className="w-full rounded-[10px] border border-brass/35 bg-white/40 px-3 py-2 font-sans text-sm"
         />
+
+        {loading ? (
+          <p className="font-sans text-xs italic text-inksoft">Ładuję użytkowników…</p>
+        ) : filteredUsers.length === 0 ? (
+          <p className="font-sans text-xs text-inksoft">
+            Brak użytkowników. Uruchom Docs/supabase-profiles-username.sql, jeśli
+            kolumna display_name nie istnieje.
+          </p>
+        ) : (
+          <ul className="max-h-48 space-y-1 overflow-y-auto rounded border border-brass/15 p-2">
+            {filteredUsers.map((row) => {
+              const active = selectedUser?.id === row.id;
+              return (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUser(row);
+                      setUserId(row.id);
+                    }}
+                    className={`w-full rounded px-2 py-1.5 text-left font-sans text-xs transition-colors ${
+                      active
+                        ? "bg-brass/20 text-ink"
+                        : "text-inksoft hover:bg-brass/10"
+                    }`}
+                  >
+                    <span className="font-medium text-ink">
+                      {row.display_name ?? "— bez nazwy —"}
+                    </span>
+                    <span className="mt-0.5 block opacity-80">
+                      {row.email ?? "brak e-mail"} · {row.invite_access_tier} ·
+                      zaufanie {row.trust_score}
+                      {row.is_banned ? " · BAN" : ""}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {selectedUser ? (
+          <p className="font-sans text-[11px] text-inksoft">
+            Wybrany: <strong>{selectedUser.display_name ?? selectedUser.id}</strong>
+          </p>
+        ) : null}
+
         <input
           type="datetime-local"
           value={noviceDate}

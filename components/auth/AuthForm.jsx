@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
+  applyPendingDisplayNameIfAny,
+  setDisplayName,
+  storePendingDisplayName,
+} from "@/lib/userData";
+import {
   clearPendingInviteCode,
   claimInviteCode,
   storePendingInviteCode,
@@ -19,9 +24,10 @@ import {
 export function AuthForm({ mode = "login" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, signUp, signOut } = useAuth();
+  const { signIn, signUp, signOut, refreshDisplayName } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayNameInput] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -66,6 +72,11 @@ export function AuthForm({ mode = "login" }) {
     try {
       if (isRegister) {
         const code = inviteCode.trim();
+        const name = displayName.trim();
+        if (!name || name.length < 3) {
+          setError("Podaj nazwę podróżnika (min. 3 znaki).");
+          return;
+        }
         if (!code) {
           setError("Your Soul jest dostępne tylko na zaproszenie — podaj kod.");
           return;
@@ -82,6 +93,7 @@ export function AuthForm({ mode = "login" }) {
         }
 
         storePendingInviteCode(code);
+        storePendingDisplayName(name);
 
         const result = await signUp(email, password);
         if (!result.ok) {
@@ -90,10 +102,18 @@ export function AuthForm({ mode = "login" }) {
         }
         if (result.needsConfirmation) {
           setInfo(
-            "Konto utworzone. Potwierdź e-mail, zaloguj się tym samym kodem zaproszenia — bez niego droga pozostaje zamknięta."
+            "Konto utworzone. Potwierdź e-mail, zaloguj się z tym samym kodem i nazwą — bez nich droga pozostaje zamknięta."
           );
           return;
         }
+
+        const nameResult = await setDisplayName(name);
+        if (!nameResult.ok) {
+          await signOut();
+          setError(nameResult.error ?? "Nie udało się zapisać nazwy.");
+          return;
+        }
+        await refreshDisplayName(result.user?.id);
 
         const inviteAfterSignup = await applyInviteAfterAuth({ required: true });
         if (!inviteAfterSignup.ok) {
@@ -170,6 +190,20 @@ export function AuthForm({ mode = "login" }) {
           {isRegister ? (
             <>
               <label className="font-sans text-[11px] uppercase tracking-[0.12em] text-brass">
+                Nazwa podróżnika
+              </label>
+              <input
+                type="text"
+                required
+                minLength={3}
+                maxLength={24}
+                value={displayName}
+                onChange={(event) => setDisplayNameInput(event.target.value)}
+                placeholder="np. Zmierzch"
+                autoComplete="username"
+                className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-sans text-sm text-[#ece6d8] placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
+              />
+              <label className="font-sans text-[11px] uppercase tracking-[0.12em] text-brass">
                 Kod zaproszenia
               </label>
               <input
@@ -194,7 +228,10 @@ export function AuthForm({ mode = "login" }) {
           ) : null}
           <BrassButton
             type="submit"
-            disabled={loading || (isRegister && !inviteCode.trim())}
+            disabled={
+              loading ||
+              (isRegister && (!inviteCode.trim() || displayName.trim().length < 3))
+            }
             className="mt-0"
           >
             {loading

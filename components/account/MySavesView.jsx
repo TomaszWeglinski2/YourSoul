@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { fetchMySavedData } from "@/lib/userData";
+import { fetchMySavedData, setDisplayName } from "@/lib/userData";
 import {
   BrassButton,
   JourneyCard,
@@ -18,10 +18,14 @@ function formatDate(iso) {
 
 export function MySavesView() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, displayName, refreshDisplayName } =
+    useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [nameInput, setNameInput] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameMessage, setNameMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,6 +39,21 @@ export function MySavesView() {
     }
     setLoading(false);
   }, []);
+
+  async function handleSaveDisplayName() {
+    setNameSaving(true);
+    setNameMessage("");
+    const result = await setDisplayName(nameInput);
+    if (!result.ok) {
+      setNameMessage(result.error);
+      setNameSaving(false);
+      return;
+    }
+    await refreshDisplayName();
+    setNameMessage("Nazwa zapisana.");
+    await load();
+    setNameSaving(false);
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -59,9 +78,45 @@ export function MySavesView() {
           Moje zapisy
         </h1>
         <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
-          Podgląd tego, co Supabase zapisało na Twoim koncie
-          {data?.email ? ` (${data.email})` : ""}.
+          {displayName ? (
+            <>
+              Jesteś w społeczności jako{" "}
+              <strong className="text-brass">{displayName}</strong>
+            </>
+          ) : (
+            <>Ustaw nazwę podróżnika — admin i inni gracze będą mogli Cię rozpoznać.</>
+          )}
+          {data?.email ? (
+            <span className="block mt-1 text-mistsoft">Konto: {data.email}</span>
+          ) : null}
         </p>
+
+        {!displayName && !loading ? (
+          <div className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 p-3">
+            <label className="mb-2 block font-sans text-[11px] uppercase tracking-[0.12em] text-brass">
+              Nazwa podróżnika
+            </label>
+            <input
+              type="text"
+              minLength={3}
+              maxLength={24}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="np. Zmierzch"
+              className="mb-2 w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2 font-sans text-sm text-[#ece6d8]"
+            />
+            <BrassButton
+              disabled={nameSaving || nameInput.trim().length < 3}
+              onClick={() => void handleSaveDisplayName()}
+              className="mt-0"
+            >
+              {nameSaving ? "Zapisuję…" : "Zapisz nazwę"}
+            </BrassButton>
+            {nameMessage ? (
+              <p className="mt-2 font-sans text-xs text-mistsoft">{nameMessage}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="font-sans text-sm italic text-mistsoft">Ładuję…</p>
@@ -79,6 +134,10 @@ export function MySavesView() {
               </p>
               {data.profile ? (
                 <>
+                  <p className="mb-1">
+                    <span className="text-mistsoft">Nazwa: </span>
+                    {data.profile.display_name ?? displayName ?? "— brak —"}
+                  </p>
                   <p className="mb-1 text-mistsoft">
                     Ostatnia aktualizacja:{" "}
                     {formatDate(data.profile.updated_at)}

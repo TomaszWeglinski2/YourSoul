@@ -9,30 +9,52 @@ import {
   useState,
 } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { applyPendingDisplayNameIfAny } from "@/lib/userData";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [displayName, setDisplayName] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshDisplayName = useCallback(async (userId) => {
+    if (!userId) {
+      setDisplayName(null);
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    setDisplayName(data?.display_name ?? null);
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      void refreshDisplayName(nextUser?.id);
       setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      void refreshDisplayName(nextUser?.id);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshDisplayName]);
 
   const signUp = useCallback(async (email, password) => {
     const supabase = getSupabaseBrowserClient();
@@ -74,24 +96,30 @@ export function AuthProvider({ children }) {
       return { ok: false, error: error.message };
     }
 
+    await applyPendingDisplayNameIfAny();
+    await refreshDisplayName((await supabase.auth.getUser()).data.user?.id);
+
     return { ok: true };
-  }, []);
+  }, [refreshDisplayName]);
 
   const signOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
+    setDisplayName(null);
   }, []);
 
   const value = useMemo(
     () => ({
       user,
+      displayName,
       loading,
       signUp,
       signIn,
       signOut,
+      refreshDisplayName,
       isAuthenticated: Boolean(user),
     }),
-    [user, loading, signUp, signIn, signOut]
+    [user, displayName, loading, signUp, signIn, signOut, refreshDisplayName]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

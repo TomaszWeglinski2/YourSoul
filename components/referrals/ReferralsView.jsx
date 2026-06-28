@@ -40,7 +40,7 @@ const TIER_LABELS = {
 
 export function ReferralsView() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, displayName } = useAuth();
 
   const [status, setStatus] = useState(null);
   const [codes, setCodes] = useState([]);
@@ -152,7 +152,7 @@ export function ReferralsView() {
           Dzielenie drogi
         </p>
         <h1 className="mb-2 font-serif text-[22px] font-medium text-[#ece6d8]">
-          Twoje zaproszenia
+          {displayName ? `${displayName} · zaproszenia` : "Twoje zaproszenia"}
         </h1>
         <p className="mb-4 font-sans text-xs leading-relaxed text-mistsoft">
           Kod wiąże się dopiero, gdy zaproszony przejdzie Wrota. Twoje wejście:{" "}

@@ -8,7 +8,7 @@ import { useJourney } from "@/context/JourneyContext";
 export function JourneyShell({ children }) {
   const router = useRouter();
   const { resetJourney } = useJourney();
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, displayName } = useAuth();
 
   function handleReset() {
     resetJourney();
@@ -28,6 +28,11 @@ export function JourneyShell({ children }) {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {!loading && user ? (
+              <span className="font-sans text-[10.5px] tracking-[0.05em] text-brass">
+                {displayName ?? "Podróżnik"}
+              </span>
+            ) : null}
             {!loading && user ? (
               <Link
                 href="/moje-zapisy"

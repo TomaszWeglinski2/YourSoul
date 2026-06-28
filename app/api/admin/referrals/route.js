@@ -77,10 +77,55 @@ async function setUserInviteAccess(supabase, userId, mode, noviceUntil) {
   return { ok: true };
 }
 
+async function listUsersForAdmin(supabase, search = "") {
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select(
+      "id, display_name, trust_score, invite_access_tier, wrota_completed_at, is_banned, created_at, invite_pool"
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (profilesError) {
+    return { ok: false, error: profilesError.message, users: [] };
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 200,
+  });
+
+  if (authError) {
+    return { ok: false, error: authError.message, users: [] };
+  }
+
+  const emailById = Object.fromEntries(
+    (authData?.users ?? []).map((row) => [row.id, row.email ?? null])
+  );
+
+  let users = (profiles ?? []).map((row) => ({
+    ...row,
+    email: emailById[row.id] ?? null,
+  }));
+
+  const query = String(search ?? "").trim().toLowerCase();
+  if (query) {
+    users = users.filter(
+      (row) =>
+        row.display_name?.toLowerCase().includes(query) ||
+        row.email?.toLowerCase().includes(query) ||
+        row.id.toLowerCase().includes(query)
+    );
+  }
+
+  return { ok: true, users };
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { password, action, userId, tier, count, mode, noviceUntil } = body;
+    const { password, action, userId, tier, count, mode, noviceUntil, search } =
+      body;
 
     const auth = verifyAdminPassword(String(password ?? ""));
     if (!auth.ok) {
@@ -123,6 +168,14 @@ export async function POST(request) {
       return Response.json({ ok: true });
     }
 
+    if (action === "list_users") {
+      const result = await listUsersForAdmin(supabase, search);
+      if (!result.ok) {
+        return Response.json({ error: result.error }, { status: 500 });
+      }
+      return Response.json({ users: result.users });
+    }
+
     if (action === "review_flag" && body.flagId) {
       const { error } = await supabase
         .from("referral_abuse_flags")
@@ -136,7 +189,7 @@ export async function POST(request) {
       return Response.json({ ok: true });
     }
 
-    const [flagsRes, journalRes, adminCodesRes] = await Promise.all([
+    const [flagsRes, journalRes, adminCodesRes, usersResult] = await Promise.all([
       supabase
         .from("referral_abuse_flags")
         .select("id, user_id, flag_type, severity, details, created_at, reviewed_at")
@@ -153,6 +206,7 @@ export async function POST(request) {
         .eq("is_admin", true)
         .order("created_at", { ascending: false })
         .limit(30),
+      listUsersForAdmin(supabase, ""),
     ]);
 
     if (flagsRes.error) {
@@ -163,6 +217,8 @@ export async function POST(request) {
       flags: flagsRes.data ?? [],
       journal: journalRes.data ?? [],
       adminCodes: adminCodesRes.data ?? [],
+      users: usersResult.ok ? usersResult.users : [],
+      usersError: usersResult.ok ? null : usersResult.error,
       journalError: journalRes.error?.message ?? null,
       adminCodesError: adminCodesRes.error?.message ?? null,
     });
