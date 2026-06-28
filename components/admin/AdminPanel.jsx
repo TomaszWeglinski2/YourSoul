@@ -7,7 +7,7 @@ import {
   AdminKick,
   AdminShell,
 } from "@/components/admin/AdminShell";
-import { ImportSection } from "@/components/admin/ImportSection";
+import { CatalogSection } from "@/components/admin/CatalogSection";
 import { QualitySection } from "@/components/admin/QualitySection";
 import { QuotesSection } from "@/components/admin/QuotesSection";
 
@@ -138,7 +138,7 @@ export function AdminPanel() {
       {tab === "quality" ? <QualitySection password={password} /> : null}
 
       {["glosses", "towers", "przesilenie", "cienie"].includes(tab) ? (
-        <ImportSection
+        <CatalogSection
           password={password}
           type={tab}
           title={IMPORT_META[tab].title}
