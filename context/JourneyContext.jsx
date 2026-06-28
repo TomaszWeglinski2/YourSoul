@@ -101,6 +101,10 @@ export function JourneyProvider({ children }) {
     setState((prev) => ({ ...prev, mood }));
   }, []);
 
+  const setDimmedQuoteId = useCallback((quoteId) => {
+    setState((prev) => ({ ...prev, dimmedQuoteId: quoteId }));
+  }, []);
+
   const resetJourney = useCallback(() => {
     setState(INITIAL_JOURNEY_STATE);
   }, []);
@@ -120,6 +124,7 @@ export function JourneyProvider({ children }) {
       addToZielnik,
       toggleResonance,
       setMood,
+      setDimmedQuoteId,
       resetJourney,
     }),
     [
@@ -136,6 +141,7 @@ export function JourneyProvider({ children }) {
       addToZielnik,
       toggleResonance,
       setMood,
+      setDimmedQuoteId,
       resetJourney,
     ]
   );

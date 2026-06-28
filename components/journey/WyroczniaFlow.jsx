@@ -8,6 +8,7 @@ import {
   addToCollection,
   fetchMyReactionsForMargins,
   fetchPublicMargins,
+  flagQuote,
   saveMargin as saveMarginDb,
   toggleMarginReaction,
 } from "@/lib/userData";
@@ -102,6 +103,21 @@ export function WyroczniaFlow() {
     loadChorus();
   }, [step, current?.id]);
 
+  async function handleSilence() {
+    setStep("chorus");
+  }
+
+  async function handleFlagQuote() {
+    setFlagged(current.id);
+    if (isAuthenticated) {
+      const result = await flagQuote(current.id);
+      if (!result.ok) {
+        setSaveWarning(result.error);
+      }
+    }
+    setStep("chorus");
+  }
+
   async function handleKeepQuote() {
     const text = marginText.trim();
     setKeepLoading(true);
@@ -176,6 +192,7 @@ export function WyroczniaFlow() {
           a: data.quote.author,
           w: data.quote.work,
           g: data.glosa,
+          cien: data.quote.cien ?? null,
           v: data.quote.axes,
         };
         setCurrentQuote(quote);
@@ -322,7 +339,7 @@ export function WyroczniaFlow() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setStep("chorus")}
+                    onClick={() => void handleSilence()}
                     className="flex-1 rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
                   >
                     zostaw w ciszy
@@ -356,10 +373,7 @@ export function WyroczniaFlow() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFlagged(current.id);
-                    setStep("chorus");
-                  }}
+                  onClick={() => void handleFlagQuote()}
                   className="mt-3.5 block w-full rounded-[10px] border border-tension/25 bg-transparent px-3 py-2.5 text-left transition-all duration-150 hover:border-tension hover:bg-tension/10"
                 >
                   <span className="block font-sans text-xs text-tension">
@@ -477,30 +491,19 @@ export function WyroczniaFlow() {
             </button>
             <button
               type="button"
-              onClick={() => setStep("constellation")}
+              onClick={() => router.push("/zielnik")}
+              className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
+            >
+              Twój zielnik (zapiski)
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/konstelacja")}
               className="block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
             >
               zobacz konstelację
             </button>
           </div>
-        </JourneyCard>
-      </JourneyShell>
-    );
-  }
-
-  if (step === "constellation") {
-    return (
-      <JourneyShell>
-        <JourneyCard dark>
-          <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
-            Konstelacja
-          </p>
-          <h1 className="mb-2.5 font-serif text-[25px] font-medium leading-tight text-[#ece6d8]">
-            Wkrótce
-          </h1>
-          <p className="font-sans text-sm leading-relaxed text-mist">
-            Mapa konstelacji zbudujemy w kolejnym kroku.
-          </p>
         </JourneyCard>
       </JourneyShell>
     );

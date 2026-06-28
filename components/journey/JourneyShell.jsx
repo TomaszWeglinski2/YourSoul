@@ -28,6 +28,14 @@ export function JourneyShell({ children }) {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {!loading && user ? (
+              <Link
+                href="/moje-zapisy"
+                className="font-sans text-[10.5px] tracking-[0.05em] text-mistsoft hover:text-brass"
+              >
+                moje zapisy
+              </Link>
+            ) : null}
             {!loading && (
               user ? (
                 <button

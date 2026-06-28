@@ -45,6 +45,7 @@ export async function POST(request) {
         author: quote.author,
         work: quote.work,
         axes: quote.axes,
+        cien: quote.cien ?? null,
       },
       glosa,
     });
