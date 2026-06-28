@@ -29,11 +29,11 @@ function starsFromCollections(rows) {
   const seen = new Set();
   const stars = [];
   rows.forEach((row) => {
+    if (!row.quotes) return;
     const star = normalizeStarFromDb(row);
-    if (!seen.has(star.id)) {
-      seen.add(star.id);
-      stars.push(star);
-    }
+    if (!star.id || seen.has(star.id)) return;
+    seen.add(star.id);
+    stars.push(star);
   });
   return stars;
 }
@@ -68,7 +68,7 @@ function TowerModal({ tower, stars, onClose }) {
 
 export function ConstellationView() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { zielnik, dimmedQuoteId, setDimmedQuoteId } = useJourney();
 
   const [stars, setStars] = useState([]);
@@ -110,8 +110,9 @@ export function ConstellationView() {
   }, [isAuthenticated, zielnik]);
 
   useEffect(() => {
+    if (authLoading) return;
     void loadData();
-  }, [loadData]);
+  }, [authLoading, loadData]);
 
   const positions = useMemo(
     () => (stars.length ? layoutStars(stars) : {}),
@@ -245,7 +246,7 @@ export function ConstellationView() {
     );
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <JourneyShell>
         <JourneyCard dark>
@@ -267,13 +268,43 @@ export function ConstellationView() {
           <h1 className="mb-2.5 font-serif text-[25px] font-medium leading-tight text-[#ece6d8]">
             Twoje niebo jest jeszcze ciemne.
           </h1>
-          <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
-            Wróć do Wyroczni i zachowaj kilka gwiazd. Z nich zbudujesz mapę
-            własnego rozumienia.
-          </p>
-          <BrassButton onClick={() => router.push("/wyrocznia")}>
-            Do Wyroczni
-          </BrassButton>
+          {error ? (
+            <p className="mb-3 font-sans text-xs leading-relaxed text-tension">
+              {error}
+            </p>
+          ) : (
+            <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
+              Wróć do Wyroczni i zachowaj kilka gwiazd. Z nich zbudujesz mapę
+              własnego rozumienia.
+            </p>
+          )}
+          {!isAuthenticated ? (
+            <p className="mb-4 font-sans text-xs italic text-mistsoft">
+              Jesteś niezalogowany — zapisane cytaty w bazie widać dopiero po
+              zalogowaniu.
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            {error ? (
+              <BrassButton onClick={() => void loadData()} className="mt-0">
+                spróbuj ponownie
+              </BrassButton>
+            ) : null}
+            {!isAuthenticated ? (
+              <BrassButton
+                onClick={() => router.push("/logowanie?next=/konstelacja")}
+                className="mt-0"
+              >
+                zaloguj się
+              </BrassButton>
+            ) : null}
+            <BrassButton
+              onClick={() => router.push("/wyrocznia")}
+              className={error || !isAuthenticated ? "mt-0" : ""}
+            >
+              Do Wyroczni
+            </BrassButton>
+          </div>
         </JourneyCard>
       </JourneyShell>
     );

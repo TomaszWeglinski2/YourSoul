@@ -75,7 +75,7 @@ function ZielnikEntry({ star, margin, onRevealShadow }) {
 
 export function ZielnikView() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { zielnik, marg, pub } = useJourney();
 
   const [stars, setStars] = useState([]);
@@ -99,11 +99,11 @@ export function ZielnikView() {
         const seen = new Set();
         const loaded = [];
         (result.collections ?? []).forEach((row) => {
+          if (!row.quotes) return;
           const star = normalizeStarFromDb(row);
-          if (!seen.has(star.id)) {
-            seen.add(star.id);
-            loaded.push(star);
-          }
+          if (!star.id || seen.has(star.id)) return;
+          seen.add(star.id);
+          loaded.push(star);
         });
         setStars(loaded);
         setMarginsByQuote(result.marginsByQuote ?? {});
@@ -128,10 +128,11 @@ export function ZielnikView() {
   }, [isAuthenticated, zielnik, marg, pub]);
 
   useEffect(() => {
+    if (authLoading) return;
     void loadData();
-  }, [loadData]);
+  }, [authLoading, loadData]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <JourneyShell>
         <JourneyCard dark>
@@ -153,13 +154,40 @@ export function ZielnikView() {
           <h1 className="mb-2.5 font-serif text-[25px] font-medium leading-tight text-[#ece6d8]">
             Jeszcze pusto.
           </h1>
-          <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
-            Wróć do Wyroczni, dopisz margines i zachowaj kilka słów. Tu
-            zbierają się Twoje zapiski — cytaty, Twoje marginesy i nici.
-          </p>
-          <BrassButton onClick={() => router.push("/wyrocznia")}>
-            Do Wyroczni
-          </BrassButton>
+          {error ? (
+            <p className="mb-3 font-sans text-xs leading-relaxed text-tension">
+              {error}
+            </p>
+          ) : (
+            <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
+              Wróć do Wyroczni, dopisz margines i zachowaj kilka słów. Tu
+              zbierają się Twoje zapiski — cytaty, Twoje marginesy i nici.
+            </p>
+          )}
+          {!isAuthenticated ? (
+            <p className="mb-4 font-sans text-xs italic text-mistsoft">
+              Jesteś niezalogowany — zapisane cytaty w bazie widać dopiero po
+              zalogowaniu.
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            {error ? (
+              <BrassButton onClick={() => void loadData()} className="mt-0">
+                spróbuj ponownie
+              </BrassButton>
+            ) : null}
+            {!isAuthenticated ? (
+              <BrassButton
+                onClick={() => router.push("/logowanie?next=/zielnik")}
+                className="mt-0"
+              >
+                zaloguj się
+              </BrassButton>
+            ) : null}
+            <BrassButton onClick={() => router.push("/wyrocznia")}>
+              Do Wyroczni
+            </BrassButton>
+          </div>
         </JourneyCard>
       </JourneyShell>
     );
