@@ -1,35 +1,64 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMySavedData, setDisplayName } from "@/lib/userData";
 import {
-  BrassButton,
-  JourneyCard,
-  JourneyShell,
-} from "@/components/journey/JourneyShell";
+  collectionDupCounts,
+  filterCollections,
+  filterMargins,
+  filterReactions,
+  groupCollectionsByAuthor,
+  pluralPl,
+  reactionLabel,
+  sortCollections,
+} from "@/lib/savesLibraryUtils";
+import {
+  DisplayNameForm,
+  KonstelacjaPane,
+  MarginCard,
+  ProfileCard,
+  QuoteCard,
+  ResonanceCard,
+  SavesLibraryFooter,
+  SavesStickyBar,
+  SimpleListPane,
+} from "@/components/saves-library/SavesLibraryUI";
+import { JourneyShell } from "@/components/journey/JourneyShell";
 
-function formatDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("pl-PL");
-}
+const TABS = [
+  { id: "konst", label: "Konstelacja" },
+  { id: "marg", label: "Marginesy" },
+  { id: "rez", label: "Rezonanse" },
+];
 
 export function MySavesView() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading, displayName, refreshDisplayName } =
     useAuth();
+
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const [tab, setTab] = useState("konst");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("new");
+  const [groupByAuthor, setGroupByAuthor] = useState(false);
+
+  const load = useCallback(async ({ soft = false } = {}) => {
+    if (soft) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError("");
+
     const result = await fetchMySavedData();
     if (!result.ok) {
       setError(result.error);
@@ -37,7 +66,12 @@ export function MySavesView() {
     } else {
       setData(result);
     }
-    setLoading(false);
+
+    if (soft) {
+      setRefreshing(false);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   async function handleSaveDisplayName() {
@@ -51,7 +85,7 @@ export function MySavesView() {
     }
     await refreshDisplayName();
     setNameMessage("Nazwa zapisana.");
-    await load();
+    await load({ soft: true });
     setNameSaving(false);
   }
 
@@ -61,210 +95,215 @@ export function MySavesView() {
       router.replace("/logowanie?next=/moje-zapisy");
       return;
     }
-    load();
+    void load();
   }, [authLoading, isAuthenticated, load, router]);
+
+  const collections = data?.collections ?? [];
+  const margins = data?.margins ?? [];
+  const reactions = data?.reactions ?? [];
+
+  const dupCounts = useMemo(() => collectionDupCounts(collections), [collections]);
+
+  const filteredKonst = useMemo(() => {
+    const filtered = filterCollections(collections, search);
+    return sortCollections(filtered, sort);
+  }, [collections, search, sort]);
+
+  const filteredMarg = useMemo(
+    () => filterMargins(margins, search),
+    [margins, search]
+  );
+
+  const filteredRez = useMemo(
+    () => filterReactions(reactions, search),
+    [reactions, search]
+  );
+
+  const counts = {
+    konst: collections.length,
+    marg: margins.length,
+    rez: reactions.length,
+  };
+
+  const konstItemProps = useMemo(
+    () => ({
+      render: (row, dups) => {
+        const key = `${row.quotes?.author ?? ""}|${row.quotes?.text ?? ""}`;
+        return (
+          <QuoteCard
+            key={row.id}
+            author={row.quotes?.author}
+            text={row.quotes?.text ?? `cytat #${row.quote_id}`}
+            createdAt={row.created_at}
+            dupCount={dups?.[key]}
+          />
+        );
+      },
+      grouped: groupCollectionsByAuthor,
+    }),
+    []
+  );
 
   if (authLoading || (!isAuthenticated && !error)) {
     return null;
   }
 
   return (
-    <JourneyShell>
-      <JourneyCard dark>
-        <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
-          Twoje zapisy w bazie
-        </p>
-        <h1 className="mb-2 font-serif text-[25px] font-medium leading-tight text-[#ece6d8]">
-          Moje zapisy
-        </h1>
-        <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
-          {displayName ? (
-            <>
-              Jesteś w społeczności jako{" "}
-              <strong className="text-brass">{displayName}</strong>
-            </>
-          ) : (
-            <>Ustaw nazwę podróżnika — admin i inni gracze będą mogli Cię rozpoznać.</>
-          )}
-          {data?.email ? (
-            <span className="block mt-1 text-mistsoft">Konto: {data.email}</span>
-          ) : null}
-        </p>
-
-        {!displayName && !loading ? (
-          <div className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 p-3">
-            <label className="mb-2 block font-sans text-[11px] uppercase tracking-[0.12em] text-brass">
-              Nazwa podróżnika
-            </label>
-            <input
-              type="text"
-              minLength={3}
-              maxLength={24}
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="np. Zmierzch"
-              className="mb-2 w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2 font-sans text-sm text-[#ece6d8]"
-            />
-            <BrassButton
-              disabled={nameSaving || nameInput.trim().length < 3}
-              onClick={() => void handleSaveDisplayName()}
-              className="mt-0"
-            >
-              {nameSaving ? "Zapisuję…" : "Zapisz nazwę"}
-            </BrassButton>
-            {nameMessage ? (
-              <p className="mt-2 font-sans text-xs text-mistsoft">{nameMessage}</p>
+    <JourneyShell wide>
+      <div className="saves-lib">
+        <header className="sl-head">
+          <p className="sl-kick">Twoje zapisy w bazie</p>
+          <h1 className="sl-title">Moje zapisy</h1>
+          <p className="sl-sub">
+            {displayName ? (
+              <>
+                Jesteś w społeczności jako <b>{displayName}</b>
+              </>
+            ) : (
+              <>Podgląd tego, co Supabase zapisało na Twoim koncie.</>
+            )}
+            {data?.email ? (
+              <span className="block mt-1 text-mistsoft">Konto: {data.email}</span>
             ) : null}
-          </div>
-        ) : null}
+          </p>
+        </header>
 
         {loading ? (
-          <p className="font-sans text-sm italic text-mistsoft">Ładuję…</p>
+          <p className="px-0.5 font-sans text-sm italic text-mistsoft">Ładuję…</p>
         ) : null}
 
         {error ? (
-          <p className="mb-4 font-sans text-xs text-tension">{error}</p>
+          <p className="mb-3 px-0.5 font-sans text-xs text-tension">{error}</p>
         ) : null}
 
         {data && !loading ? (
-          <div className="space-y-5 font-sans text-sm text-mist">
-            <section className="rounded-[10px] border border-brass/25 bg-brass/10 p-3">
-              <p className="mb-2 text-[10.5px] uppercase tracking-[0.14em] text-brass">
-                Profil (Wrota)
-              </p>
-              {data.profile ? (
-                <>
-                  <p className="mb-1">
-                    <span className="text-mistsoft">Nazwa: </span>
-                    {data.profile.display_name ?? displayName ?? "— brak —"}
-                  </p>
-                  <p className="mb-1 text-mistsoft">
-                    Ostatnia aktualizacja:{" "}
-                    {formatDate(data.profile.updated_at)}
-                  </p>
-                  <p className="mb-1">
-                    <span className="text-mistsoft">Światy: </span>
-                    {data.profile.worlds?.length
-                      ? data.profile.worlds.join(", ")
-                      : "— brak —"}
-                  </p>
-                  <p>
-                    <span className="text-mistsoft">Odcisk: </span>
-                    {Array.isArray(data.profile.odcisk)
-                      ? `[${data.profile.odcisk.map((n) => Number(n).toFixed(2)).join(", ")}]`
-                      : "— brak —"}
-                  </p>
-                </>
-              ) : (
-                <p className="italic text-mistsoft">
-                  Brak wiersza w profiles — przejdź Wrota po zalogowaniu.
-                </p>
-              )}
-            </section>
+          <>
+            <ProfileCard profile={data.profile} displayName={displayName} />
 
-            <section className="rounded-[10px] border border-brass/25 bg-brass/10 p-3">
-              <p className="mb-2 text-[10.5px] uppercase tracking-[0.14em] text-brass">
-                Konstelacja ({data.collections.length})
-              </p>
-              {data.collections.length === 0 ? (
-                <p className="italic text-mistsoft">
-                  Brak — kliknij „to zostaje ze mną" przy cytacie.
-                </p>
-              ) : (
-                <ul className="space-y-3">
-                  {data.collections.map((row) => (
-                    <li
-                      key={row.id}
-                      className="border-b border-brass/15 pb-2 last:border-0 last:pb-0"
-                    >
-                      <p className="font-serif italic text-[#ece6d8]">
-                        „{row.quotes?.text ?? `cytat #${row.quote_id}`}"
-                      </p>
-                      <p className="text-xs text-mistsoft">
-                        {row.quotes?.author ?? "—"}
-                        {row.quotes?.work ? `, ${row.quotes.work}` : ""} ·{" "}
-                        {formatDate(row.created_at)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            {!displayName ? (
+              <DisplayNameForm
+                value={nameInput}
+                onChange={setNameInput}
+                onSave={() => void handleSaveDisplayName()}
+                saving={nameSaving}
+                message={nameMessage}
+              />
+            ) : null}
 
-            <section className="rounded-[10px] border border-brass/25 bg-brass/10 p-3">
-              <p className="mb-2 text-[10.5px] uppercase tracking-[0.14em] text-brass">
-                Marginesy ({data.margins.length})
-              </p>
-              {data.margins.length === 0 ? (
-                <p className="italic text-mistsoft">
-                  Brak — dopisz myśl przy cytacie i zapisz.
-                </p>
-              ) : (
-                <ul className="space-y-3">
-                  {data.margins.map((row) => (
-                    <li
-                      key={row.id}
-                      className="border-b border-brass/15 pb-2 last:border-0 last:pb-0"
-                    >
-                      <p className="font-serif italic text-[#ece6d8]">
-                        „{row.body}"
-                      </p>
-                      <p className="text-xs text-mistsoft">
-                        przy: „{row.quotes?.text?.slice(0, 60) ?? row.quote_id}
-                        …" · {row.visibility} · {formatDate(row.created_at)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <SavesStickyBar
+              search={search}
+              onSearchChange={setSearch}
+              activeTab={tab}
+              onTabChange={setTab}
+              counts={counts}
+              tabs={TABS}
+            />
 
-            <section className="rounded-[10px] border border-brass/25 bg-brass/10 p-3">
-              <p className="mb-2 text-[10.5px] uppercase tracking-[0.14em] text-brass">
-                Rezonanse ({data.reactions.length})
-              </p>
-              {data.reactions.length === 0 ? (
-                <p className="italic text-mistsoft">
-                  Brak — kliknij „to też mnie poruszyło" przy publicznym
-                  marginesie.
-                </p>
-              ) : (
-                <ul className="space-y-1 text-xs text-mistsoft">
-                  {data.reactions.map((row) => (
-                    <li key={row.id}>
-                      Margines #{row.margin_id} · {formatDate(row.created_at)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </div>
+            <div className={tab === "konst" ? "" : "sl-hidden"}>
+              <KonstelacjaPane
+                items={filteredKonst}
+                total={collections.length}
+                search={search}
+                sort={sort}
+                onSortChange={setSort}
+                groupByAuthor={groupByAuthor}
+                onGroupToggle={() => setGroupByAuthor((v) => !v)}
+                dupCounts={dupCounts}
+                getItemProps={konstItemProps}
+                emptySearch={{
+                  icon: "⌕",
+                  title: "Nic nie pasuje",
+                  description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+                }}
+                emptyDefault={{
+                  icon: "✦",
+                  title: "Pusto w konstelacji",
+                  description:
+                    'Brak zapisanych cytatów — kliknij „to zostaje ze mną" przy cytacie w Wyroczni.',
+                }}
+              />
+            </div>
+
+            <div className={tab === "marg" ? "" : "sl-hidden"}>
+              <SimpleListPane
+                items={filteredMarg}
+                total={margins.length}
+                search={search}
+                countLabel={(n) => (
+                  <>
+                    <b>{n}</b> {pluralPl(n, "margines", "marginesy", "marginesów")}
+                  </>
+                )}
+                renderItem={(row) => (
+                  <MarginCard
+                    key={row.id}
+                    body={row.body}
+                    quoteText={row.quotes?.text}
+                    visibility={row.visibility}
+                    createdAt={row.created_at}
+                  />
+                )}
+                emptySearch={{
+                  icon: "✎",
+                  title: "Brak pasujących marginesów",
+                  description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+                }}
+                emptyDefault={{
+                  icon: "✎",
+                  title: "Brak marginesów",
+                  description: "Marginesy to Twoje własne notatki przy cytatach.",
+                }}
+              />
+            </div>
+
+            <div className={tab === "rez" ? "" : "sl-hidden"}>
+              <SimpleListPane
+                items={filteredRez}
+                total={reactions.length}
+                search={search}
+                countLabel={(n) => (
+                  <>
+                    <b>{n}</b> {pluralPl(n, "rezonans", "rezonanse", "rezonansów")}
+                  </>
+                )}
+                renderItem={(row) => (
+                  <ResonanceCard
+                    key={row.id}
+                    title={reactionLabel(row)}
+                    subtitle={
+                      row.margins?.quotes?.author
+                        ? `autor cytatu: ${row.margins.quotes.author}`
+                        : null
+                    }
+                    createdAt={row.created_at}
+                  />
+                )}
+                emptySearch={{
+                  icon: "✦",
+                  title: "Brak pasujących rezonansów",
+                  description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+                }}
+                emptyDefault={{
+                  icon: "✦",
+                  title: "Cisza",
+                  description:
+                    "Rezonans to znak, że ktoś poczuł to samo co Ty przy publicznym marginesie.",
+                }}
+              />
+            </div>
+
+            <SavesLibraryFooter
+              onRefresh={() => void load({ soft: true })}
+              refreshing={refreshing}
+              links={[
+                { href: "/zaproszenia", label: "Zaproszenia i zaufanie" },
+                { href: "/drzewo", label: "Publiczne drzewo poleceń" },
+                { href: "/wyrocznia", label: "Wróć do Wyroczni" },
+              ]}
+            />
+          </>
         ) : null}
-
-        <div className="mt-5 flex flex-col gap-2">
-          <BrassButton onClick={() => load()} className="mt-0">
-            Odśwież
-          </BrassButton>
-          <Link
-            href="/zaproszenia"
-            className="block text-center font-sans text-xs text-brass hover:underline"
-          >
-            Zaproszenia i zaufanie
-          </Link>
-          <Link
-            href="/drzewo"
-            className="block text-center font-sans text-xs text-brass hover:underline"
-          >
-            Publiczne drzewo poleceń
-          </Link>
-          <Link
-            href="/wyrocznia"
-            className="block text-center font-sans text-xs text-brass hover:underline"
-          >
-            Wróć do Wyroczni
-          </Link>
-        </div>
-      </JourneyCard>
+      </div>
     </JourneyShell>
   );
 }

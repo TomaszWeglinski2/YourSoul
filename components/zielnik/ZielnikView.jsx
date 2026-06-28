@@ -1,75 +1,80 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { lastName, normalizeStarFromDb, normalizeThreadFromDb } from "@/lib/constellationMath";
 import { fetchZielnikData } from "@/lib/userData";
+import {
+  filterNici,
+  filterZielnikMargins,
+  filterZielnikStars,
+  groupStarsByAuthor,
+  marginsListFromMap,
+  pluralPl,
+  sortZielnikStars,
+} from "@/lib/savesLibraryUtils";
 import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
 import {
-  BrassButton,
-  JourneyCard,
-  JourneyShell,
-} from "@/components/journey/JourneyShell";
+  KonstelacjaPane,
+  MarginCard,
+  QuoteCard,
+  ResonanceCard,
+  SavesLibraryFooter,
+  SavesStickyBar,
+  SimpleListPane,
+  SavesEmptyState,
+} from "@/components/saves-library/SavesLibraryUI";
+import { BrassButton, JourneyShell } from "@/components/journey/JourneyShell";
 
-function ZielnikEntry({ star, margin, onRevealShadow }) {
+const TABS = [
+  { id: "konst", label: "Konstelacja" },
+  { id: "marg", label: "Marginesy" },
+  { id: "nici", label: "Nici" },
+];
+
+function ZielnikQuoteCard({ star, margin }) {
   const [shadowVisible, setShadowVisible] = useState(false);
   const hasMargin = Boolean(margin?.body?.trim());
   const canRevealShadow = hasMargin && star.cien;
 
-  return (
-    <div className="mb-5 border-b border-brass/20 pb-5 last:mb-0 last:border-b-0">
-      <p className="font-serif text-[17px] italic leading-[1.45] text-[#ece6d8]">
-        „{star.t}"
-      </p>
-      <p className="mt-1 font-sans text-xs text-mistsoft">
-        — {star.a}
-        {star.w ? `, ${star.w}` : ""}
-      </p>
-      {star.g ? (
-        <p className="mt-2 font-serif text-sm leading-relaxed text-mist">
-          {star.g}
-        </p>
-      ) : null}
+  const extra = (
+    <>
+      {star.g ? <p className="sl-gloss">{star.g}</p> : null}
       {hasMargin ? (
-        <div className="mt-3 rounded-lg border border-brass/25 bg-brass/5 px-3 py-2.5">
-          <p className="mb-1 font-sans text-[10px] uppercase tracking-[0.14em] text-brassdeep">
-            Twój margines
-            {margin.visibility === "public" ? " · publiczny" : " · prywatny"}
-          </p>
-          <p className="font-serif text-sm italic text-[#e6e0d2]">
-            {margin.body}
-          </p>
-        </div>
+        <p className="mt-2 text-[12px] text-mistsoft">
+          Twój margines · {margin.visibility === "public" ? "publiczny" : "prywatny"}
+        </p>
       ) : null}
       {canRevealShadow && !shadowVisible ? (
         <button
           type="button"
-          onClick={() => {
-            setShadowVisible(true);
-            onRevealShadow?.();
-          }}
-          className="mt-3 cursor-pointer rounded-lg border border-mist/25 bg-transparent px-3 py-2 font-sans text-xs text-mistsoft transition-all duration-150 hover:border-mist/45 hover:bg-mist/10"
+          className="sl-shadow-btn"
+          onClick={() => setShadowVisible(true)}
         >
           ✦ odsłoń cień
         </button>
       ) : null}
       {canRevealShadow && shadowVisible ? (
-        <div className="mt-3 rounded-lg border border-mist/20 bg-[#161b29]/60 px-3.5 py-3">
-          <p className="mb-1.5 font-sans text-[10px] uppercase tracking-[0.14em] text-mistsoft">
+        <div className="sl-shadow-box">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-mistsoft">
             Cień — człowiek za słowem
           </p>
-          <p className="font-serif text-sm italic leading-relaxed text-[#b8c0d4]">
+          <p className="mt-2 font-serif text-sm italic leading-relaxed text-[#b8c0d4]">
             {star.cien}
-          </p>
-          <p className="mt-2.5 font-sans text-xs leading-relaxed text-mistsoft">
-            Nie po to, by go pomniejszyć — po to, byś wiedział, że nawet ten,
-            kto to napisał, był tylko człowiekiem. Jak Ty, gdy pisałeś przy tym
-            swój margines.
           </p>
         </div>
       ) : null}
-    </div>
+    </>
+  );
+
+  return (
+    <QuoteCard
+      author={star.a}
+      text={star.t}
+      createdAt={star.savedAt}
+      extra={extra}
+    />
   );
 }
 
@@ -82,95 +87,151 @@ export function ZielnikView() {
   const [marginsByQuote, setMarginsByQuote] = useState({});
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const [tab, setTab] = useState("konst");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("new");
+  const [groupByAuthor, setGroupByAuthor] = useState(false);
 
-    if (isAuthenticated) {
-      const result = await fetchZielnikData();
-      if (!result.ok) {
-        setError(result.error);
-        setStars([]);
-        setMarginsByQuote({});
-        setThreads([]);
+  const loadData = useCallback(
+    async ({ soft = false } = {}) => {
+      if (soft) {
+        setRefreshing(true);
       } else {
-        const seen = new Set();
-        const loaded = [];
-        (result.collections ?? []).forEach((row) => {
-          if (!row.quotes) return;
-          const star = normalizeStarFromDb(row);
-          if (!star.id || seen.has(star.id)) return;
-          seen.add(star.id);
-          loaded.push(star);
-        });
-        setStars(loaded);
-        setMarginsByQuote(result.marginsByQuote ?? {});
-        setThreads((result.nici ?? []).map(normalizeThreadFromDb));
-        if (result.warning) {
-          setError(result.warning);
-        }
+        setLoading(true);
       }
-    } else {
-      setStars(zielnik);
-      const localMargins = {};
-      Object.entries(marg).forEach(([quoteId, body]) => {
-        if (body?.trim()) {
-          localMargins[quoteId] = {
-            body,
-            visibility: pub[quoteId] ? "public" : "private",
-          };
-        }
-      });
-      setMarginsByQuote(localMargins);
-      setThreads([]);
-    }
+      setError("");
 
-    setLoading(false);
-  }, [isAuthenticated, zielnik, marg, pub]);
+      if (isAuthenticated) {
+        const result = await fetchZielnikData();
+        if (!result.ok) {
+          setError(result.error);
+          setStars([]);
+          setMarginsByQuote({});
+          setThreads([]);
+        } else {
+          const seen = new Set();
+          const loaded = [];
+          (result.collections ?? []).forEach((row) => {
+            if (!row.quotes) return;
+            const star = normalizeStarFromDb(row);
+            if (!star.id || seen.has(star.id)) return;
+            seen.add(star.id);
+            loaded.push({ ...star, savedAt: row.created_at });
+          });
+          setStars(loaded);
+          setMarginsByQuote(result.marginsByQuote ?? {});
+          setThreads((result.nici ?? []).map(normalizeThreadFromDb));
+          if (result.warning) {
+            setError(result.warning);
+          }
+        }
+      } else {
+        setStars(zielnik);
+        const localMargins = {};
+        Object.entries(marg).forEach(([quoteId, body]) => {
+          if (body?.trim()) {
+            localMargins[quoteId] = {
+              body,
+              visibility: pub[quoteId] ? "public" : "private",
+            };
+          }
+        });
+        setMarginsByQuote(localMargins);
+        setThreads([]);
+      }
+
+      if (soft) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    },
+    [isAuthenticated, zielnik, marg, pub]
+  );
 
   useEffect(() => {
     if (authLoading) return;
     void loadData();
   }, [authLoading, loadData]);
 
+  const marginItems = useMemo(
+    () => marginsListFromMap(marginsByQuote, stars),
+    [marginsByQuote, stars]
+  );
+
+  const starById = useMemo(
+    () => Object.fromEntries(stars.map((s) => [String(s.id), s])),
+    [stars]
+  );
+
+  const filteredStars = useMemo(() => {
+    const filtered = filterZielnikStars(stars, search);
+    return sortZielnikStars(filtered, sort);
+  }, [stars, search, sort]);
+
+  const filteredMargins = useMemo(
+    () => filterZielnikMargins(marginItems, search),
+    [marginItems, search]
+  );
+
+  const filteredThreads = useMemo(
+    () => filterNici(threads, search, starById),
+    [threads, search, starById]
+  );
+
+  const counts = {
+    konst: stars.length,
+    marg: marginItems.length,
+    nici: threads.length,
+  };
+
+  const konstItemProps = useMemo(
+    () => ({
+      render: (star) => (
+        <ZielnikQuoteCard
+          key={star.id}
+          star={star}
+          margin={marginsByQuote[star.id] ?? marginsByQuote[String(star.id)]}
+        />
+      ),
+      grouped: groupStarsByAuthor,
+    }),
+    [marginsByQuote]
+  );
+
   if (authLoading || loading) {
     return (
-      <JourneyShell>
-        <JourneyCard dark>
-          <p className="font-sans text-sm italic text-mistsoft">
-            Otwieram zielnik…
-          </p>
-        </JourneyCard>
+      <JourneyShell wide>
+        <div className="saves-lib">
+          <p className="font-sans text-sm italic text-mistsoft">Otwieram zielnik…</p>
+        </div>
       </JourneyShell>
     );
   }
 
-  if (stars.length === 0 && threads.length === 0) {
+  if (stars.length === 0 && threads.length === 0 && marginItems.length === 0) {
     return (
-      <JourneyShell>
-        <JourneyCard dark>
-          <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
-            Twój zielnik
-          </p>
-          <h1 className="mb-2.5 font-serif text-[25px] font-medium leading-tight text-[#ece6d8]">
-            Jeszcze pusto.
-          </h1>
+      <JourneyShell wide>
+        <div className="saves-lib">
+          <header className="sl-head">
+            <p className="sl-kick">Twój zielnik</p>
+            <h1 className="sl-title">Jeszcze pusto.</h1>
+          </header>
           {error ? (
-            <p className="mb-3 font-sans text-xs leading-relaxed text-tension">
-              {error}
-            </p>
+            <p className="mb-3 font-sans text-xs text-tension">{error}</p>
           ) : (
-            <p className="mb-4 font-sans text-sm leading-relaxed text-mist">
-              Wróć do Wyroczni, dopisz margines i zachowaj kilka słów. Tu
-              zbierają się Twoje zapiski — cytaty, Twoje marginesy i nici.
-            </p>
+            <SavesEmptyState
+              icon="✦"
+              title="Zacznij od Wyroczni"
+              description="Wróć do Wyroczni, dopisz margines i zachowaj kilka słów. Tu zbierają się Twoje zapiski."
+            />
           )}
           {!isAuthenticated ? (
             <p className="mb-4 font-sans text-xs italic text-mistsoft">
-              Jesteś niezalogowany — zapisane cytaty w bazie widać dopiero po
-              zalogowaniu.
+              Jesteś niezalogowany — zapisane cytaty w bazie widać dopiero po zalogowaniu.
             </p>
           ) : null}
           <div className="flex flex-col gap-2">
@@ -191,76 +252,141 @@ export function ZielnikView() {
               Do Wyroczni
             </BrassButton>
           </div>
-        </JourneyCard>
+        </div>
       </JourneyShell>
     );
   }
 
-  const starById = Object.fromEntries(stars.map((s) => [s.id, s]));
-
   return (
-    <JourneyShell>
-      <JourneyCard dark>
-        <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
-          Twój zielnik — prywatna antologia
-        </p>
+    <JourneyShell wide>
+      <div className="saves-lib">
+        <header className="sl-head">
+          <p className="sl-kick">Twój zielnik — prywatna antologia</p>
+          <h1 className="sl-title">Zielnik</h1>
+          <p className="sl-sub">
+            Cytaty, marginesy i nici — <b>Twoja osobista ścieżka</b> przez Wyrocznię.
+          </p>
+        </header>
 
         {error ? (
           <p className="mb-3 font-sans text-xs text-tension">{error}</p>
         ) : null}
 
-        {stars.map((star) => (
-          <ZielnikEntry
-            key={star.id}
-            star={star}
-            margin={marginsByQuote[star.id]}
-          />
-        ))}
+        <SavesStickyBar
+          search={search}
+          onSearchChange={setSearch}
+          activeTab={tab}
+          onTabChange={setTab}
+          counts={counts}
+          tabs={TABS}
+        />
 
-        {threads.length > 0 ? (
-          <div className="mt-5 border-t border-brass/25 pt-4">
-            <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
-              Twoje nici
-            </p>
-            {threads.map((thread, idx) => {
+        <div className={tab === "konst" ? "" : "sl-hidden"}>
+          <KonstelacjaPane
+            items={filteredStars}
+            total={stars.length}
+            search={search}
+            sort={sort}
+            onSortChange={setSort}
+            groupByAuthor={groupByAuthor}
+            onGroupToggle={() => setGroupByAuthor((v) => !v)}
+            dupCounts={{}}
+            getItemProps={konstItemProps}
+            emptySearch={{
+              icon: "⌕",
+              title: "Nic nie pasuje",
+              description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+            }}
+            emptyDefault={{
+              icon: "✦",
+              title: "Brak cytatów",
+              description: "Zachowaj cytaty w Wyroczni — pojawią się tutaj.",
+            }}
+          />
+        </div>
+
+        <div className={tab === "marg" ? "" : "sl-hidden"}>
+          <SimpleListPane
+            items={filteredMargins}
+            total={marginItems.length}
+            search={search}
+            countLabel={(n) => (
+              <>
+                <b>{n}</b> {pluralPl(n, "margines", "marginesy", "marginesów")}
+              </>
+            )}
+            renderItem={(row) => (
+              <MarginCard
+                key={row.id}
+                body={row.body}
+                quoteText={row.quotes?.text}
+                visibility={row.visibility}
+                createdAt={row.created_at}
+              />
+            )}
+            emptySearch={{
+              icon: "✎",
+              title: "Brak pasujących marginesów",
+              description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+            }}
+            emptyDefault={{
+              icon: "✎",
+              title: "Brak marginesów",
+              description: "Marginesy to Twoje własne notatki przy cytatach.",
+            }}
+          />
+        </div>
+
+        <div className={tab === "nici" ? "" : "sl-hidden"}>
+          <SimpleListPane
+            items={filteredThreads}
+            total={threads.length}
+            search={search}
+            countLabel={(n) => (
+              <>
+                <b>{n}</b> {pluralPl(n, "nić", "nici", "nici")}
+              </>
+            )}
+            renderItem={(thread, idx) => {
               const qa = starById[thread.a];
               const qb = starById[thread.b];
               const sym = thread.type === "napiecie" ? "↮" : "✦";
               return (
-                <p
+                <ResonanceCard
                   key={thread.id ?? idx}
-                  className={`mb-2 font-serif text-sm italic ${
-                    thread.type === "napiecie" ? "text-tension" : "text-mist"
-                  }`}
-                >
-                  {qa ? lastName(qa.a) : "?"} {sym}{" "}
-                  {qb ? lastName(qb.a) : "?"} — „{thread.glosa}"
-                </p>
+                  icon={sym}
+                  title={`${qa ? lastName(qa.a) : "?"} ${sym} ${qb ? lastName(qb.a) : "?"}`}
+                  subtitle={`„${thread.glosa}"`}
+                />
               );
-            })}
-          </div>
-        ) : null}
+            }}
+            emptySearch={{
+              icon: "⌕",
+              title: "Brak pasujących nici",
+              description: "Spróbuj innego słowa albo wyczyść wyszukiwanie.",
+            }}
+            emptyDefault={{
+              icon: "↮",
+              title: "Brak nici",
+              description: "Spinaj cytaty w konstelacji — nici pojawią się tutaj.",
+            }}
+          />
+        </div>
 
-        <p className="mt-4 font-sans text-[11px] italic leading-relaxed text-mistsoft">
-          Cień — człowiek za słowem — odsłania się tylko przy cytatach, którym
-          dałeś własny margines.
+        <p className="mt-4 px-0.5 font-sans text-[11px] italic leading-relaxed text-mistsoft">
+          Cień — człowiek za słowem — odsłania się tylko przy cytatach, którym dałeś
+          własny margines.
         </p>
 
-        <button
-          type="button"
-          onClick={() => router.push("/konstelacja")}
-          className="mt-4 block w-full rounded-[11px] border border-brass/45 bg-brass/5 px-3 py-2.5 font-sans text-[13px] text-[#e6e0d2] transition-all duration-150 hover:border-brass hover:bg-brass/15"
-        >
-          zobacz konstelację
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/wyrocznia")}
-          className="mt-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
-        >
-          wróć do Wyroczni
-        </button>
-      </JourneyCard>
+        <SavesLibraryFooter
+          onRefresh={() => void loadData({ soft: true })}
+          refreshing={refreshing}
+          links={[
+            { href: "/konstelacja", label: "Zobacz konstelację" },
+            { href: "/wyrocznia", label: "Wróć do Wyroczni" },
+          ]}
+        />
+      </div>
     </JourneyShell>
   );
 }

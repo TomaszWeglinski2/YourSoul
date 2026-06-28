@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
 
-export function JourneyShell({ children }) {
+export function JourneyShell({ children, wide = false }) {
   const router = useRouter();
   const { resetJourney } = useJourney();
   const { user, signOut, loading, displayName } = useAuth();
@@ -17,7 +17,9 @@ export function JourneyShell({ children }) {
 
   return (
     <main className="flex flex-1 justify-center p-3.5">
-      <div className="flex w-full max-w-[440px] flex-col">
+      <div
+        className={`flex w-full flex-col ${wide ? "max-w-[760px]" : "max-w-[440px]"}`}
+      >
         <div className="mb-3.5 flex items-center justify-between px-0.5 opacity-[0.92]">
           <div className="flex items-center gap-2">
             <span className="grid h-[22px] w-[22px] place-items-center rounded-full border border-brass font-serif text-xs text-brass">

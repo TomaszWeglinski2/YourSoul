@@ -47,3 +47,733 @@ body {
     transform: none;
   }
 }
+
+/* ——— Moje zapisy / Zielnik (Docs/moje-zapisy-ux.html) ——— */
+.saves-lib {
+  --sl-panel: #1a2032;
+  --sl-panel2: #161b29;
+  --sl-line: rgba(196, 153, 90, 0.16);
+  --sl-line2: rgba(174, 182, 201, 0.12);
+  --sl-ink: #ece6d8;
+  --sl-faint: #646c80;
+  --sl-brasssoft: rgba(196, 153, 90, 0.14);
+  width: 100%;
+  color: var(--color-mist);
+  font-family: var(--font-sans);
+  padding-bottom: 24px;
+}
+
+.saves-lib .sl-head {
+  padding: 6px 2px 16px;
+}
+
+.saves-lib .sl-kick {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-brass);
+  margin-bottom: 8px;
+}
+
+.saves-lib .sl-title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 30px;
+  color: var(--sl-ink);
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.saves-lib .sl-sub {
+  font-size: 13.5px;
+  color: var(--color-mistsoft);
+  line-height: 1.5;
+}
+
+.saves-lib .sl-sub b {
+  color: var(--color-mist);
+  font-weight: 500;
+}
+
+.saves-lib .sl-profile {
+  background: linear-gradient(180deg, var(--sl-panel), var(--sl-panel2));
+  border: 1px solid var(--sl-line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 8px 0 4px;
+}
+
+.saves-lib .sl-profile-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.saves-lib .sl-profile-kick {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-brass);
+}
+
+.saves-lib .sl-profile-upd {
+  font-size: 11px;
+  color: var(--sl-faint);
+}
+
+.saves-lib .sl-worlds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.saves-lib .sl-chip {
+  border: 1px solid rgba(196, 153, 90, 0.4);
+  background: var(--sl-brasssoft);
+  color: var(--sl-ink);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px;
+}
+
+.saves-lib .sl-axes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px 22px;
+}
+
+@media (max-width: 560px) {
+  .saves-lib .sl-axes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.saves-lib .sl-axis-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  margin-bottom: 5px;
+}
+
+.saves-lib .sl-axis-name {
+  color: var(--color-mist);
+}
+
+.saves-lib .sl-axis-val {
+  color: var(--color-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-lib .sl-axis-val.neg {
+  color: var(--color-tension);
+}
+
+.saves-lib .sl-axis-track {
+  position: relative;
+  height: 5px;
+  background: rgba(174, 182, 201, 0.12);
+  border-radius: 3px;
+}
+
+.saves-lib .sl-axis-zero {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(174, 182, 201, 0.35);
+}
+
+.saves-lib .sl-axis-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+}
+
+.saves-lib .sl-axis-fill.pos {
+  background: linear-gradient(90deg, var(--color-brassdeep), var(--color-brass));
+}
+
+.saves-lib .sl-axis-fill.neg {
+  background: linear-gradient(90deg, var(--color-tension), var(--color-tensiondeep));
+}
+
+.saves-lib .sl-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(16, 20, 30, 0.86);
+  backdrop-filter: blur(10px);
+  margin: 14px -14px 0;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--sl-line2);
+}
+
+.saves-lib .sl-search {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.saves-lib .sl-search input {
+  width: 100%;
+  background: rgba(20, 24, 36, 0.8);
+  border: 1px solid rgba(174, 182, 201, 0.2);
+  border-radius: 11px;
+  padding: 11px 36px 11px 38px;
+  color: var(--sl-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.saves-lib .sl-search input::placeholder {
+  color: var(--sl-faint);
+}
+
+.saves-lib .sl-search input:focus {
+  outline: none;
+  border-color: var(--color-brass);
+  background: rgba(20, 24, 36, 1);
+}
+
+.saves-lib .sl-search input:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-search-ic {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-mistsoft);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.saves-lib .sl-search-clr {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-mistsoft);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.saves-lib .sl-search-clr:hover {
+  color: var(--color-brass);
+}
+
+.saves-lib .sl-search-clr:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(20, 24, 36, 0.7);
+  border: 1px solid var(--sl-line2);
+  border-radius: 11px;
+  padding: 4px;
+}
+
+.saves-lib .sl-tab {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--color-mistsoft);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.saves-lib .sl-tab:hover {
+  color: var(--color-mist);
+}
+
+.saves-lib .sl-tab.on {
+  background: var(--color-brass);
+  color: #fff8ec;
+}
+
+.saves-lib .sl-tab:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-tab-cnt {
+  font-size: 11px;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-lib .sl-tab.on .sl-tab-cnt {
+  opacity: 0.95;
+}
+
+.saves-lib .sl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 2px 4px;
+}
+
+.saves-lib .sl-count {
+  font-size: 12px;
+  color: var(--color-mistsoft);
+}
+
+.saves-lib .sl-count b {
+  color: var(--color-mist);
+  font-weight: 600;
+}
+
+.saves-lib .sl-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.saves-lib .sl-select {
+  background: rgba(20, 24, 36, 0.8);
+  border: 1px solid rgba(174, 182, 201, 0.2);
+  color: var(--color-mist);
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.saves-lib .sl-select:focus {
+  outline: none;
+  border-color: var(--color-brass);
+}
+
+.saves-lib .sl-select:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--color-mistsoft);
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--sl-line2);
+  border-radius: 9px;
+  padding: 7px 11px;
+  background: rgba(20, 24, 36, 0.5);
+}
+
+.saves-lib .sl-toggle:hover {
+  color: var(--color-mist);
+}
+
+.saves-lib .sl-toggle.on {
+  color: var(--color-brass);
+  border-color: rgba(196, 153, 90, 0.4);
+  background: var(--sl-brasssoft);
+}
+
+.saves-lib .sl-toggle:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+}
+
+.saves-lib .sl-toggle.on .sl-toggle-dot {
+  background: var(--color-brass);
+  border-color: var(--color-brass);
+}
+
+.saves-lib .sl-list {
+  padding: 6px 0;
+}
+
+.saves-lib .sl-qcard {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 13px 14px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  transition: all 0.14s;
+}
+
+.saves-lib .sl-qcard:hover {
+  background: var(--sl-panel);
+  border-color: var(--sl-line);
+}
+
+.saves-lib .sl-qcard + .sl-qcard {
+  margin-top: 3px;
+}
+
+.saves-lib .sl-qmark {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--sl-line);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--color-brass);
+  background: rgba(196, 153, 90, 0.06);
+  margin-top: 1px;
+}
+
+.saves-lib .sl-qbody {
+  flex: 1;
+  min-width: 0;
+}
+
+.saves-lib .sl-qtext {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16.5px;
+  color: var(--sl-ink);
+  line-height: 1.35;
+}
+
+.saves-lib .sl-qmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--color-mistsoft);
+  flex-wrap: wrap;
+}
+
+.saves-lib .sl-qmeta-au {
+  color: var(--color-brass);
+  opacity: 0.85;
+}
+
+.saves-lib .sl-qmeta-sep {
+  color: var(--sl-faint);
+}
+
+.saves-lib .sl-dup {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--color-tension);
+  border: 1px solid rgba(138, 147, 196, 0.4);
+  border-radius: 10px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.saves-lib .sl-group {
+  margin-top: 10px;
+}
+
+.saves-lib .sl-group-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px 6px;
+  position: sticky;
+  top: 118px;
+  background: linear-gradient(180deg, rgba(16, 20, 30, 0.95), rgba(16, 20, 30, 0.7));
+  backdrop-filter: blur(4px);
+  z-index: 5;
+}
+
+.saves-lib .sl-group-name {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--color-brass);
+}
+
+.saves-lib .sl-group-cnt {
+  font-size: 11px;
+  color: var(--sl-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-lib .sl-group-line {
+  flex: 1;
+  height: 1px;
+  background: var(--sl-line);
+}
+
+.saves-lib .sl-mcard {
+  padding: 14px 16px;
+  border-radius: 11px;
+  border: 1px solid var(--sl-line2);
+  background: rgba(26, 32, 50, 0.5);
+  transition: all 0.14s;
+}
+
+.saves-lib .sl-mcard:hover {
+  border-color: var(--sl-line);
+}
+
+.saves-lib .sl-mcard + .sl-mcard {
+  margin-top: 8px;
+}
+
+.saves-lib .sl-mtop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.saves-lib .sl-mbody {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--sl-ink);
+  line-height: 1.4;
+}
+
+.saves-lib .sl-badge {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 10px;
+}
+
+.saves-lib .sl-badge.pub {
+  color: var(--color-brass);
+  background: var(--sl-brasssoft);
+  border: 1px solid rgba(196, 153, 90, 0.35);
+}
+
+.saves-lib .sl-badge.prv {
+  color: var(--color-mistsoft);
+  background: rgba(174, 182, 201, 0.08);
+  border: 1px solid var(--sl-line2);
+}
+
+.saves-lib .sl-mquote {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--color-mistsoft);
+  line-height: 1.45;
+  border-left: 2px solid var(--sl-line);
+  padding-left: 10px;
+}
+
+.saves-lib .sl-mquote i {
+  color: var(--color-mist);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.saves-lib .sl-mtime {
+  font-size: 11px;
+  color: var(--sl-faint);
+  margin-top: 7px;
+}
+
+.saves-lib .sl-rcard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: 11px;
+  border: 1px solid var(--sl-line2);
+  background: rgba(26, 32, 50, 0.4);
+}
+
+.saves-lib .sl-rcard + .sl-rcard {
+  margin-top: 7px;
+}
+
+.saves-lib .sl-rcard-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--color-brass);
+  border: 1px solid var(--sl-line);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.saves-lib .sl-rcard-title {
+  font-size: 13.5px;
+  color: var(--color-mist);
+}
+
+.saves-lib .sl-rcard-sub {
+  font-size: 11px;
+  color: var(--sl-faint);
+  margin-top: 2px;
+}
+
+.saves-lib .sl-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-mistsoft);
+}
+
+.saves-lib .sl-empty-ic {
+  font-size: 26px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.saves-lib .sl-empty-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  color: var(--color-mist);
+  margin-bottom: 6px;
+}
+
+.saves-lib .sl-empty-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.saves-lib .sl-foot {
+  margin-top: 26px;
+}
+
+.saves-lib .sl-footlinks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 14px;
+}
+
+.saves-lib .sl-footlinks a,
+.saves-lib .sl-footlinks button.linkish {
+  color: var(--color-mistsoft);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 9px;
+  letter-spacing: 0.01em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.saves-lib .sl-footlinks a:hover,
+.saves-lib .sl-footlinks button.linkish:hover {
+  color: var(--color-brass);
+}
+
+.saves-lib .sl-footlinks a:focus-visible,
+.saves-lib .sl-footlinks button.linkish:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.saves-lib .sl-name-form {
+  margin: 12px 0 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 153, 90, 0.25);
+  background: rgba(196, 153, 90, 0.1);
+  padding: 14px 16px;
+}
+
+.saves-lib .sl-name-form input {
+  width: 100%;
+  background: rgba(20, 24, 36, 0.8);
+  border: 1px solid rgba(196, 153, 90, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--sl-ink);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.saves-lib .sl-name-form input:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-shadow-btn {
+  margin-top: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid rgba(174, 182, 201, 0.25);
+  background: transparent;
+  padding: 7px 11px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-mistsoft);
+  transition: all 0.14s;
+}
+
+.saves-lib .sl-shadow-btn:hover {
+  border-color: rgba(174, 182, 201, 0.45);
+  background: rgba(174, 182, 201, 0.1);
+}
+
+.saves-lib .sl-shadow-btn:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-shadow-box {
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(174, 182, 201, 0.2);
+  background: rgba(22, 27, 41, 0.6);
+  padding: 12px 14px;
+}
+
+.saves-lib .sl-gloss {
+  margin-top: 6px;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-mist);
+}
+
+.saves-lib .sl-hidden {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saves-lib * {
+    transition: none !important;
+  }
+}
