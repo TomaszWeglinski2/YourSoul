@@ -179,19 +179,15 @@ export function ConstellationView() {
     setBindError("");
 
     if (isAuthenticated) {
-      const axis =
-        linkType === "napiecie"
-          ? tensionAxis(qa, qb) >= 0
-            ? tensionAxis(qa, qb)
-            : null
-          : null;
+      const tensionAx =
+        linkType === "napiecie" ? tensionAxis(qa, qb) : -1;
 
       const result = await saveThread({
         quoteAId: a,
         quoteBId: b,
         type: linkType,
         glosa,
-        axis,
+        axis: tensionAx >= 0 ? tensionAx : null,
       });
 
       if (!result.ok) {
@@ -200,15 +196,22 @@ export function ConstellationView() {
         return;
       }
     } else {
+      const tensionAx =
+        linkType === "napiecie" ? tensionAxis(qa, qb) : null;
       setThreads((prev) => [
         ...prev,
-        { a, b, type: linkType, glosa, axis: null },
+        { a, b, type: linkType, glosa, axis: tensionAx },
       ]);
     }
 
     if (linkType === "napiecie") {
       const ax = tensionAxis(qa, qb);
-      setPrzesilenie({ quoteA: qa, quoteB: qb, axis: ax >= 0 ? ax : 0 });
+      if (ax < 0) {
+        setBindError("Ta para nie niesie osi napięcia — przesilenia tu nie ma.");
+        setSaving(false);
+        return;
+      }
+      setPrzesilenie({ quoteA: qa, quoteB: qb, axis: ax });
       cancelLinking();
     } else {
       cancelLinking();

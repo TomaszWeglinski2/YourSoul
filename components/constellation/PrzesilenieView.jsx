@@ -1,9 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AXES } from "@/lib/journeyConstants";
 import { pickPrzesilenie } from "@/lib/constellationData";
 import { BrassButton, JourneyCard } from "@/components/journey/JourneyShell";
+
+function hardcodedFallback(axis) {
+  const item = pickPrzesilenie(axis);
+  return {
+    name: item.name,
+    a: item.a,
+    b: item.b,
+    choiceA: `Ocal ${item.a}`,
+    choiceB: `Ocal ${item.b}`,
+    beats: item.beats,
+    pointa: item.pointa,
+  };
+}
 
 export function PrzesilenieView({
   quoteA,
@@ -12,18 +25,76 @@ export function PrzesilenieView({
   onComplete,
   onDimSacrifice,
 }) {
-  const scenario = pickPrzesilenie(axis);
+  const [scenario, setScenario] = useState(null);
+  const [loadError, setLoadError] = useState("");
   const [phase, setPhase] = useState(0);
   const [showPointa, setShowPointa] = useState(false);
   const [choice, setChoice] = useState(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoadError("");
+      setScenario(null);
+      setPhase(0);
+      setShowPointa(false);
+      setChoice(null);
+
+      try {
+        const response = await fetch("/api/przesilenie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ axis }),
+        });
+        const data = await response.json();
+
+        if (cancelled) return;
+
+        if (!response.ok) {
+          setScenario(hardcodedFallback(axis));
+          setLoadError(data.error ?? "Użyto scenariusza zapasowego.");
+          return;
+        }
+
+        setScenario(data.scenario);
+        if (data.warning) {
+          setLoadError(data.warning);
+        }
+      } catch {
+        if (!cancelled) {
+          setScenario(hardcodedFallback(axis));
+          setLoadError("Brak połączenia — użyto scenariusza zapasowego.");
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [axis]);
+
   function handleChoice(which) {
+    if (!scenario) return;
+
     const keepLabel = which === "a" ? scenario.a : scenario.b;
     const sacLabel = which === "a" ? scenario.b : scenario.a;
     const sacQuoteId = which === "a" ? quoteB.id : quoteA.id;
     setChoice({ keepLabel, sacLabel });
     onDimSacrifice(sacQuoteId);
     setShowPointa(true);
+  }
+
+  if (!scenario) {
+    return (
+      <JourneyCard dark>
+        <p className="font-sans text-sm italic text-mistsoft">
+          Przesilenie się zbliża…
+        </p>
+      </JourneyCard>
+    );
   }
 
   if (showPointa && choice) {
@@ -53,6 +124,11 @@ export function PrzesilenieView({
     const beat = scenario.beats[phase];
     return (
       <JourneyCard dark>
+        {loadError ? (
+          <p className="mb-2 font-sans text-[10px] italic text-mistsoft">
+            {loadError}
+          </p>
+        ) : null}
         <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-tension">
           {beat.kick}
         </p>
@@ -80,14 +156,14 @@ export function PrzesilenieView({
         onClick={() => handleChoice("a")}
         className="mt-3 block w-full cursor-pointer rounded-xl border border-brass/40 bg-brass/5 px-4 py-[18px] text-center font-serif text-lg text-[#e6e0d2] transition-all duration-200 hover:border-brass hover:bg-brass/15"
       >
-        Ocal {scenario.a}
+        {scenario.choiceA}
       </button>
       <button
         type="button"
         onClick={() => handleChoice("b")}
         className="mt-3 block w-full cursor-pointer rounded-xl border border-brass/40 bg-brass/5 px-4 py-[18px] text-center font-serif text-lg text-[#e6e0d2] transition-all duration-200 hover:border-brass hover:bg-brass/15"
       >
-        Ocal {scenario.b}
+        {scenario.choiceB}
       </button>
       <p className="mt-3 text-center font-sans text-[11px] text-mistsoft">
         Oś: {AXES[axis]}
