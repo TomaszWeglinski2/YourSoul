@@ -50,8 +50,10 @@ export function ReferralsView() {
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ soft = false } = {}) => {
+    if (!soft) {
+      setLoading(true);
+    }
     setError("");
 
     const [statusRes, codesRes, journalRes] = await Promise.all([
@@ -60,13 +62,17 @@ export function ReferralsView() {
       fetchTrustJournal(),
     ]);
 
+    const errors = [];
+
     if (!statusRes.ok) {
-      setError(statusRes.error ?? "Nie udało się wczytać statusu.");
+      errors.push(statusRes.error ?? "Nie udało się wczytać statusu.");
     } else {
       setStatus(statusRes.status);
     }
 
-    if (codesRes.ok) {
+    if (!codesRes.ok) {
+      errors.push(codesRes.error ?? "Nie udało się wczytać kodów.");
+    } else {
       setCodes(codesRes.codes);
     }
 
@@ -74,7 +80,13 @@ export function ReferralsView() {
       setJournal(journalRes.entries);
     }
 
-    setLoading(false);
+    if (errors.length > 0) {
+      setError(errors.join(" "));
+    }
+
+    if (!soft) {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -95,11 +107,31 @@ export function ReferralsView() {
       setCreating(false);
       return;
     }
-    await load();
-    setCreating(false);
+
     if (result.code) {
       setCopied(result.code);
+      setCodes((prev) => {
+        const exists = prev.some((row) => row.code === result.code);
+        if (exists) {
+          return prev;
+        }
+        return [
+          {
+            id: `pending-${result.code}`,
+            code: result.code,
+            tier: "regular",
+            status: "available",
+            created_at: new Date().toISOString(),
+            used_at: null,
+            completed_at: null,
+          },
+          ...prev,
+        ];
+      });
     }
+
+    await load({ soft: true });
+    setCreating(false);
   }
 
   async function copyCode(code) {

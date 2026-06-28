@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Soul — Moje zapisy (przeprojektowany UX)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dusk:#141826; --dusk2:#1d2334; --panel:#1a2032; --panel2:#161b29;
+    --line:rgba(196,153,90,.16); --line2:rgba(174,182,201,.12);
+    --brass:#c4995a; --brassdeep:#9a7236; --brasssoft:rgba(196,153,90,.14);
+    --tension:#8a93c4; --tensiondeep:#5e68a0;
+    --ink:#ece6d8; --mist:#aeb6c9; --mistsoft:#7d8599; --faint:#646c80;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:radial-gradient(130% 80% at 50% 0%, #20283f 0%, var(--dusk) 55%, #0d1017 100%);
+    background-attachment:fixed;
+    color:var(--mist); font-family:'Inter',system-ui,sans-serif; min-height:100dvh;
+    -webkit-font-smoothing:antialiased; padding:0 14px 40px;
+  }
+  .wrap{width:100%; max-width:760px; margin:0 auto}
+
+  /* ——— górny pasek marki ——— */
+  .brandbar{display:flex; align-items:center; justify-content:space-between; padding:16px 2px 14px}
+  .brand{display:flex; align-items:center; gap:9px}
+  .brand .g{width:24px;height:24px;border:1px solid var(--brass);border-radius:50%;display:grid;place-items:center;color:var(--brass);font-family:'Spectral',serif;font-size:13px}
+  .brand .t{font-family:'Spectral',serif;letter-spacing:.16em;text-transform:uppercase;font-size:12px;color:var(--mist)}
+  .brand .t b{color:var(--brass);font-weight:600}
+  .nav{display:flex; gap:16px}
+  .nav a{color:var(--mistsoft);font-size:12px;text-decoration:none;letter-spacing:.02em}
+  .nav a:hover{color:var(--brass)}
+
+  /* ——— nagłówek strony ——— */
+  .head{padding:6px 2px 16px}
+  .kick{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:8px}
+  h1{font-family:'Spectral',serif;font-weight:500;font-size:30px;color:var(--ink);line-height:1.1;margin-bottom:6px}
+  .sub{font-size:13.5px;color:var(--mistsoft);line-height:1.5}
+  .sub b{color:var(--mist);font-weight:500}
+
+  /* ——— karta profilu ——— */
+  .profile{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:8px 0 4px}
+  .profile-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .profile-top .pk{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+  .profile-top .upd{font-size:11px;color:var(--faint)}
+  .worlds{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+  .chip{border:1px solid rgba(196,153,90,.4);background:var(--brasssoft);color:var(--ink);border-radius:20px;padding:5px 13px;font-size:12px}
+  .axes{display:grid;grid-template-columns:1fr 1fr;gap:11px 22px}
+  @media(max-width:560px){.axes{grid-template-columns:1fr}}
+  .axis-label{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px}
+  .axis-label .an{color:var(--mist)}
+  .axis-label .av{color:var(--brass);font-variant-numeric:tabular-nums}
+  .axis-label .av.neg{color:var(--tension)}
+  .axis-track{position:relative;height:5px;background:rgba(174,182,201,.12);border-radius:3px}
+  .axis-zero{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(174,182,201,.35)}
+  .axis-fill{position:absolute;top:0;bottom:0;border-radius:3px}
+  .axis-fill.pos{background:linear-gradient(90deg,var(--brassdeep),var(--brass))}
+  .axis-fill.neg{background:linear-gradient(90deg,var(--tension),var(--tensiondeep))}
+
+  /* ——— przyklejony pasek: szukaj + zakładki ——— */
+  .sticky{position:sticky;top:0;z-index:20;background:rgba(16,20,30,.86);backdrop-filter:blur(10px);margin:14px -14px 0;padding:12px 14px 10px;border-bottom:1px solid var(--line2)}
+  .sticky-inner{max-width:760px;margin:0 auto}
+  .search{position:relative;margin-bottom:10px}
+  .search input{width:100%;background:rgba(20,24,36,.8);border:1px solid rgba(174,182,201,.2);border-radius:11px;padding:11px 13px 11px 38px;color:var(--ink);font-family:'Inter';font-size:14px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:none;border-color:var(--brass);background:rgba(20,24,36,1)}
+  .search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--mistsoft);font-size:15px;pointer-events:none}
+  .search .clr{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mistsoft);cursor:pointer;font-size:16px;display:none;padding:4px}
+  .search .clr:hover{color:var(--brass)}
+  .tabs{display:flex;gap:4px;background:rgba(20,24,36,.7);border:1px solid var(--line2);border-radius:11px;padding:4px}
+  .tab{flex:1;border:none;background:none;color:var(--mistsoft);font-family:'Inter';font-size:13px;font-weight:500;padding:9px 6px;border-radius:8px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+  .tab:hover{color:var(--mist)}
+  .tab.on{background:var(--brass);color:#fff8ec}
+  .tab .cnt{font-size:11px;opacity:.8;font-variant-numeric:tabular-nums}
+  .tab.on .cnt{opacity:.95}
+
+  /* ——— pasek narzędzi listy ——— */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 2px 4px}
+  .count{font-size:12px;color:var(--mistsoft)}
+  .count b{color:var(--mist);font-weight:600}
+  .controls{display:flex;align-items:center;gap:8px}
+  select{background:rgba(20,24,36,.8);border:1px solid rgba(174,182,201,.2);color:var(--mist);border-radius:9px;padding:7px 10px;font-family:'Inter';font-size:12.5px;cursor:pointer}
+  select:focus{outline:none;border-color:var(--brass)}
+  .toggle{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mistsoft);cursor:pointer;user-select:none;border:1px solid var(--line2);border-radius:9px;padding:7px 11px;background:rgba(20,24,36,.5)}
+  .toggle:hover{color:var(--mist)}
+  .toggle.on{color:var(--brass);border-color:rgba(196,153,90,.4);background:var(--brasssoft)}
+  .toggle .dot{width:8px;height:8px;border-radius:2px;border:1px solid currentColor}
+  .toggle.on .dot{background:var(--brass);border-color:var(--brass)}
+
+  /* ——— listy ——— */
+  .list{padding:6px 0}
+  .qcard{display:flex;gap:13px;align-items:flex-start;padding:13px 14px;border-radius:11px;border:1px solid transparent;transition:all .14s;cursor:default}
+  .qcard:hover{background:var(--panel);border-color:var(--line)}
+  .qcard + .qcard{margin-top:3px}
+  .qmark{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-family:'Spectral',serif;font-size:13px;color:var(--brass);background:rgba(196,153,90,.06);margin-top:1px}
+  .qbody{flex:1;min-width:0}
+  .qtext{font-family:'Spectral',serif;font-style:italic;font-size:16.5px;color:var(--ink);line-height:1.35}
+  .qmeta{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:11.5px;color:var(--mistsoft)}
+  .qmeta .au{color:var(--brass);opacity:.85}
+  .qmeta .sep{color:var(--faint)}
+  .dup{flex-shrink:0;font-size:9.5px;letter-spacing:.05em;color:var(--tension);border:1px solid rgba(138,147,196,.4);border-radius:10px;padding:2px 7px;white-space:nowrap}
+
+  /* grupa wg autora */
+  .group{margin-top:10px}
+  .group-h{display:flex;align-items:center;gap:10px;padding:8px 6px 6px;position:sticky;top:118px;background:linear-gradient(180deg,rgba(16,20,30,.95),rgba(16,20,30,.7));backdrop-filter:blur(4px);z-index:5}
+  .group-h .gn{font-family:'Spectral',serif;font-size:15px;color:var(--brass)}
+  .group-h .gc{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .group-h .gl{flex:1;height:1px;background:var(--line)}
+
+  /* marginesy */
+  .mcard{padding:14px 16px;border-radius:11px;border:1px solid var(--line2);background:rgba(26,32,50,.5);transition:all .14s}
+  .mcard:hover{border-color:var(--line)}
+  .mcard + .mcard{margin-top:8px}
+  .mtop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+  .mbody{font-family:'Spectral',serif;font-size:16px;color:var(--ink);line-height:1.4}
+  .badge{flex-shrink:0;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:10px}
+  .badge.pub{color:var(--brass);background:var(--brasssoft);border:1px solid rgba(196,153,90,.35)}
+  .badge.prv{color:var(--mistsoft);background:rgba(174,182,201,.08);border:1px solid var(--line2)}
+  .mquote{margin-top:8px;font-size:12.5px;color:var(--mistsoft);line-height:1.45;border-left:2px solid var(--line);padding-left:10px}
+  .mquote i{color:var(--mist);font-family:'Spectral',serif;font-style:italic}
+  .mtime{font-size:11px;color:var(--faint);margin-top:7px}
+
+  /* rezonanse */
+  .rcard{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:11px;border:1px solid var(--line2);background:rgba(26,32,50,.4)}
+  .rcard + .rcard{margin-top:7px}
+  .rcard .ri{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--brass);border:1px solid var(--line);font-size:14px}
+  .rcard .rt{font-size:13.5px;color:var(--mist)}
+  .rcard .rd{font-size:11px;color:var(--faint);margin-top:2px}
+
+  /* puste stany */
+  .empty{text-align:center;padding:40px 20px;color:var(--mistsoft)}
+  .empty .ei{font-size:26px;margin-bottom:10px;opacity:.5}
+  .empty .et{font-family:'Spectral',serif;font-size:17px;color:var(--mist);margin-bottom:6px}
+  .empty .ed{font-size:13px;line-height:1.5;max-width:320px;margin:0 auto}
+
+  /* stopka */
+  .foot{margin-top:26px}
+  .refresh{width:100%;background:var(--brass);border:none;color:#fff8ec;border-radius:12px;padding:15px;font-family:'Inter';font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
+  .refresh:hover{background:var(--brassdeep)}
+  .footlinks{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:14px}
+  .footlinks a{color:var(--mistsoft);font-size:13px;text-decoration:none;padding:9px;letter-spacing:.01em}
+  .footlinks a:hover{color:var(--brass)}
+
+  .hidden{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brandbar">
+    <div class="brand"><span class="g">&#10022;</span><span class="t">Your <b>Soul</b></span></div>
+    <nav class="nav"><a href="#">moje zapisy</a><a href="#">wyloguj</a><a href="#">zacznij od nowa</a></nav>
+  </div>
+
+  <div class="head">
+    <div class="kick">Twoje zapisy w bazie</div>
+    <h1>Moje zapisy</h1>
+    <div class="sub">Podgląd tego, co Supabase zapisało na Twoim koncie <b>(tom.weglinski@gmail.com)</b>.</div>
+  </div>
+
+  <div class="profile">
+    <div class="profile-top"><span class="pk">Profil · Wrota</span><span class="upd" id="prof-upd"></span></div>
+    <div class="worlds" id="prof-worlds"></div>
+    <div class="axes" id="prof-axes"></div>
+  </div>
+
+  <div class="sticky">
+    <div class="sticky-inner">
+      <div class="search">
+        <span class="ic">&#9906;</span>
+        <input type="text" id="search" placeholder="Szukaj po cytacie lub autorze…" autocomplete="off">
+        <button class="clr" id="clr" aria-label="Wyczyść">&#10005;</button>
+      </div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-tab="konst">Konstelacja <span class="cnt" id="c-konst"></span></button>
+        <button class="tab" data-tab="marg">Marginesy <span class="cnt" id="c-marg"></span></button>
+        <button class="tab" data-tab="rez">Rezonanse <span class="cnt" id="c-rez"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KONSTELACJA -->
+  <section id="pane-konst">
+    <div class="toolbar">
+      <div class="count" id="konst-count"></div>
+      <div class="controls">
+        <select id="sort">
+          <option value="new">Najnowsze</option>
+          <option value="old">Najstarsze</option>
+          <option value="author">Autor A–Z</option>
+        </select>
+        <button class="toggle" id="grp"><span class="dot"></span>grupuj wg autora</button>
+      </div>
+    </div>
+    <div class="list" id="konst-list"></div>
+  </section>
+
+  <!-- MARGINESY -->
+  <section id="pane-marg" class="hidden">
+    <div class="toolbar"><div class="count" id="marg-count"></div></div>
+    <div class="list" id="marg-list"></div>
+  </section>
+
+  <!-- REZONANSE -->
+  <section id="pane-rez" class="hidden">
+    <div class="toolbar"><div class="count" id="rez-count"></div></div>
+    <div class="list" id="rez-list"></div>
+  </section>
+
+  <div class="foot">
+    <button class="refresh">Odśwież</button>
+    <div class="footlinks">
+      <a href="#">Zaproszenia i zaufanie</a>
+      <a href="#">Publiczne drzewo poleceń</a>
+      <a href="#">Wróć do Wyroczni</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var AXES = ['Sens','Zachwyt','Wspólnota','Tajemnica','Prowokacja'];
+var PROFILE = { worlds:['Psychologia'], odcisk:[0.50,0.00,-0.50,0.00,-0.70], updated:'2026-06-29T01:03:53' };
+
+var KONST = [
+  {a:'Fiodor Dostojewski', t:'Piękno zbawi świat.', d:'2026-06-29T01:04:07'},
+  {a:'Owidiusz', t:'Kropla drąży skałę nie siłą, lecz częstym padaniem.', d:'2026-06-29T00:59:20'},
+  {a:'Baruch Spinoza', t:'Nie wyśmiewać, nie opłakiwać, nie potępiać — lecz rozumieć.', d:'2026-06-28T23:58:39'},
+  {a:'Epiktet', t:'Nie rzeczy nas niepokoją, lecz nasze mniemania o nich.', d:'2026-06-28T22:41:27'},
+  {a:'Baruch Spinoza', t:'Nie wyśmiewać, nie opłakiwać, nie potępiać — lecz rozumieć.', d:'2026-06-28T22:40:14'},
+  {a:'Walt Whitman', t:'Jestem ogromny, mieszczę w sobie wielość.', d:'2026-06-28T22:30:11'},
+  {a:'Tertulian', t:'Wierzę, bo to niedorzeczne.', d:'2026-06-28T22:16:25'},
+  {a:'Immanuel Kant', t:'Niebo gwiaździste nade mną, prawo moralne we mnie.', d:'2026-06-28T21:59:39'},
+  {a:'Blaise Pascal', t:'Serce ma swoje racje, których rozum nie zna.', d:'2026-06-28T21:59:28'},
+  {a:'William Blake', t:'Ujrzeć świat w ziarnku piasku, a niebo w polnym kwiecie.', d:'2026-06-28T21:59:00'},
+  {a:'Walt Whitman', t:'Jestem ogromny, mieszczę w sobie wielość.', d:'2026-06-28T21:58:45'},
+  {a:'Fiodor Dostojewski', t:'Piękno zbawi świat.', d:'2026-06-28T21:58:37'},
+  {a:'Tertulian', t:'Wierzę, bo to niedorzeczne.', d:'2026-06-28T21:58:30'},
+  {a:'Marek Aureliusz', t:'Jeśli coś cię gnębi z zewnątrz, gnębi cię nie ono, lecz twój sąd o nim.', d:'2026-06-28T21:50:02'},
+  {a:'Seneka', t:'Nie dlatego nie próbujemy, że trudne; trudne jest, bo nie próbujemy.', d:'2026-06-28T21:45:18'}
+];
+
+var MARG = [
+  {body:'sasfasasav', quote:'Piękno zbawi świat.', vis:'public', d:'2026-06-29T01:04:07'},
+  {body:'asdfsdfa af as', quote:'Kropla drąży skałę nie siłą, lecz częstym padaniem.', vis:'public', d:'2026-06-29T00:59:20'},
+  {body:'UGUG UW AGUI GHDCUI AI', quote:'Nie rzeczy nas niepokoją, lecz nasze mniemania o nich.', vis:'public', d:'2026-06-28T22:41:28'},
+  {body:'r reqewtrwW', quote:'Nie wyśmiewać, nie opłakiwać, nie potępiać — lecz rozumieć.', vis:'public', d:'2026-06-28T22:40:14'}
+];
+
+var REZ = [ {label:'Margines #10', d:'2026-06-29T01:04:42'} ];
+
+// ——— pomocnicze ———
+var NOW = new Date('2026-06-29T12:00:00');
+function pad(n){ return (n<10?'0':'')+n; }
+function relTime(iso){
+  var dt=new Date(iso.replace(' ','T'));
+  var dd=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  var nn=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate());
+  var diff=Math.round((nn-dd)/86400000);
+  var hm=pad(dt.getHours())+':'+pad(dt.getMinutes());
+  if(diff===0) return 'dziś, '+hm;
+  if(diff===1) return 'wczoraj, '+hm;
+  if(diff<7) return diff+' dni temu';
+  return pad(dt.getDate())+'.'+pad(dt.getMonth()+1)+'.'+dt.getFullYear()+', '+hm;
+}
+function fullTime(iso){
+  var dt=new Date(iso.replace(' ','T'));
+  return pad(dt.getDate())+'.'+pad(dt.getMonth()+1)+'.'+dt.getFullYear()+', '+pad(dt.getHours())+':'+pad(dt.getMinutes())+':'+pad(dt.getSeconds());
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initial(name){ return (name||'?').charAt(0).toUpperCase(); }
+function norm(s){ return (s||'').toLowerCase(); }
+
+// ——— profil ———
+function renderProfile(){
+  document.getElementById('prof-upd').textContent='zaktualizowano: '+relTime(PROFILE.updated);
+  document.getElementById('prof-worlds').innerHTML = PROFILE.worlds.map(function(w){ return '<span class="chip">'+esc(w)+'</span>'; }).join('');
+  document.getElementById('prof-axes').innerHTML = PROFILE.odcisk.map(function(v,i){
+    var pos=v>=0;
+    var left = pos ? 50 : 50 + v*50;
+    var width = Math.abs(v)*50;
+    var val=(v>0?'+':'')+v.toFixed(2);
+    return '<div class="axis"><div class="axis-label"><span class="an">'+AXES[i]+'</span>'+
+      '<span class="av'+(pos?'':' neg')+'">'+val+'</span></div>'+
+      '<div class="axis-track"><div class="axis-zero"></div>'+
+      '<div class="axis-fill '+(pos?'pos':'neg')+'" style="left:'+left+'%;width:'+width+'%"></div></div></div>';
+  }).join('');
+}
+
+// ——— stan ———
+var state = { tab:'konst', q:'', sort:'new', group:false };
+
+function dupCounts(){
+  var m={}; KONST.forEach(function(x){ var k=x.a+'|'+x.t; m[k]=(m[k]||0)+1; }); return m;
+}
+function filteredKonst(){
+  var q=norm(state.q);
+  var arr=KONST.filter(function(x){ return !q || norm(x.t).indexOf(q)>=0 || norm(x.a).indexOf(q)>=0; });
+  arr=arr.slice();
+  if(state.sort==='new') arr.sort(function(a,b){ return b.d.localeCompare(a.d); });
+  else if(state.sort==='old') arr.sort(function(a,b){ return a.d.localeCompare(b.d); });
+  else arr.sort(function(a,b){ return a.a.localeCompare(b.a,'pl') || b.d.localeCompare(a.d); });
+  return arr;
+}
+function qcardHTML(x, dc){
+  var k=x.a+'|'+x.t;
+  var dupBadge = (dc && dc[k]>1) ? '<span class="dup">zapisany '+dc[k]+'×</span>' : '';
+  return '<div class="qcard"><div class="qmark">'+initial(x.a)+'</div>'+
+    '<div class="qbody"><div class="qtext">„'+esc(x.t)+'"</div>'+
+    '<div class="qmeta"><span class="au">'+esc(x.a)+'</span><span class="sep">·</span>'+
+    '<span title="'+fullTime(x.d)+'">'+relTime(x.d)+'</span></div></div>'+dupBadge+'</div>';
+}
+function renderKonst(){
+  var arr=filteredKonst();
+  var dc=dupCounts();
+  var total=KONST.length;
+  document.getElementById('konst-count').innerHTML = state.q
+    ? 'Znaleziono <b>'+arr.length+'</b> z '+total
+    : '<b>'+total+'</b> '+plural(total,'gwiazda','gwiazdy','gwiazd');
+  var box=document.getElementById('konst-list');
+  if(arr.length===0){ box.innerHTML=emptyHTML('&#9906;','Nic nie pasuje','Spróbuj innego słowa albo wyczyść wyszukiwanie.'); return; }
+  if(state.group){
+    var groups={}; var order=[];
+    arr.forEach(function(x){ if(!groups[x.a]){groups[x.a]=[]; order.push(x.a);} groups[x.a].push(x); });
+    order.sort(function(a,b){ return a.localeCompare(b,'pl'); });
+    box.innerHTML = order.map(function(au){
+      var items=groups[au].map(function(x){ return qcardHTML(x,dc); }).join('');
+      return '<div class="group"><div class="group-h"><span class="gn">'+esc(au)+'</span>'+
+        '<span class="gc">'+groups[au].length+'</span><span class="gl"></span></div>'+items+'</div>';
+    }).join('');
+  } else {
+    box.innerHTML = arr.map(function(x){ return qcardHTML(x,dc); }).join('');
+  }
+}
+function renderMarg(){
+  var q=norm(state.q);
+  var arr=MARG.filter(function(m){ return !q || norm(m.body).indexOf(q)>=0 || norm(m.quote).indexOf(q)>=0; });
+  document.getElementById('marg-count').innerHTML = state.q
+    ? 'Znaleziono <b>'+arr.length+'</b> z '+MARG.length
+    : '<b>'+MARG.length+'</b> '+plural(MARG.length,'margines','marginesy','marginesów');
+  var box=document.getElementById('marg-list');
+  if(arr.length===0){ box.innerHTML=emptyHTML('&#9998;','Brak pasujących marginesów','Marginesy to Twoje własne notatki przy cytatach.'); return; }
+  box.innerHTML = arr.map(function(m){
+    var b = m.vis==='public' ? '<span class="badge pub">publiczny</span>' : '<span class="badge prv">prywatny</span>';
+    return '<div class="mcard"><div class="mtop"><div class="mbody">„'+esc(m.body)+'"</div>'+b+'</div>'+
+      '<div class="mquote">przy: <i>„'+esc(m.quote)+'"</i></div>'+
+      '<div class="mtime" title="'+fullTime(m.d)+'">'+relTime(m.d)+'</div></div>';
+  }).join('');
+}
+function renderRez(){
+  var q=norm(state.q);
+  var arr=REZ.filter(function(r){ return !q || norm(r.label).indexOf(q)>=0; });
+  document.getElementById('rez-count').innerHTML = '<b>'+arr.length+'</b> '+plural(arr.length,'rezonans','rezonanse','rezonansów');
+  var box=document.getElementById('rez-list');
+  if(arr.length===0){ box.innerHTML=emptyHTML('&#10022;','Cisza','Rezonans to znak, że ktoś poczuł to samo co Ty.'); return; }
+  box.innerHTML = arr.map(function(r){
+    return '<div class="rcard"><div class="ri">&#10022;</div><div><div class="rt">'+esc(r.label)+'</div>'+
+      '<div class="rd" title="'+fullTime(r.d)+'">'+relTime(r.d)+'</div></div></div>';
+  }).join('');
+}
+function plural(n,a,b,c){ var n10=n%10,n100=n%100; if(n===1)return a; if(n10>=2&&n10<=4&&(n100<10||n100>=20))return b; return c; }
+function emptyHTML(icon,title,desc){ return '<div class="empty"><div class="ei">'+icon+'</div><div class="et">'+title+'</div><div class="ed">'+desc+'</div></div>'; }
+
+function setCounts(){
+  document.getElementById('c-konst').textContent=KONST.length;
+  document.getElementById('c-marg').textContent=MARG.length;
+  document.getElementById('c-rez').textContent=REZ.length;
+}
+function showTab(tab){
+  state.tab=tab;
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.classList.toggle('on', b.getAttribute('data-tab')===tab); });
+  document.getElementById('pane-konst').classList.toggle('hidden', tab!=='konst');
+  document.getElementById('pane-marg').classList.toggle('hidden', tab!=='marg');
+  document.getElementById('pane-rez').classList.toggle('hidden', tab!=='rez');
+  renderActive();
+}
+function renderActive(){
+  if(state.tab==='konst') renderKonst();
+  else if(state.tab==='marg') renderMarg();
+  else renderRez();
+}
+
+// ——— zdarzenia ———
+var searchEl=document.getElementById('search'), clrEl=document.getElementById('clr');
+searchEl.addEventListener('input', function(){
+  state.q=searchEl.value;
+  clrEl.style.display = state.q ? 'block' : 'none';
+  renderActive();
+});
+clrEl.addEventListener('click', function(){ searchEl.value=''; state.q=''; clrEl.style.display='none'; renderActive(); searchEl.focus(); });
+document.getElementById('tabs').addEventListener('click', function(e){
+  var b=e.target.closest('.tab'); if(b) showTab(b.getAttribute('data-tab'));
+});
+document.getElementById('sort').addEventListener('change', function(e){ state.sort=e.target.value; renderKonst(); });
+document.getElementById('grp').addEventListener('click', function(){
+  state.group=!state.group;
+  document.getElementById('grp').classList.toggle('on', state.group);
+  renderKonst();
+});
+
+renderProfile();
+setCounts();
+showTab('konst');
+</script>
+</body>
+</html>

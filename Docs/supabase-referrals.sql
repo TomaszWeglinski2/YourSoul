@@ -126,6 +126,8 @@ CREATE POLICY "invite_codes_select_own"
   ON public.invite_codes FOR SELECT TO authenticated
   USING (auth.uid() = inviter_id OR auth.uid() = used_by);
 
+GRANT SELECT ON public.invite_codes TO authenticated;
+
 DROP POLICY IF EXISTS "referral_edges_select_public" ON public.referral_edges;
 CREATE POLICY "referral_edges_select_public"
   ON public.referral_edges FOR SELECT
@@ -673,14 +675,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  uid uuid := auth.uid();
+  uid uuid := (select auth.uid());
 BEGIN
   IF uid IS NULL THEN
     RETURN;
   END IF;
 
   RETURN QUERY
-  SELECT ic.id, ic.code, ic.tier, ic.status, ic.created_at, ic.used_at, ic.completed_at
+  SELECT
+    ic.id,
+    ic.code,
+    ic.tier,
+    ic.status,
+    ic.created_at,
+    ic.used_at,
+    ic.completed_at
   FROM public.invite_codes ic
   WHERE ic.inviter_id = uid
   ORDER BY ic.created_at DESC
