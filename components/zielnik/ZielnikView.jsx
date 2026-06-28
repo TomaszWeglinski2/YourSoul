@@ -108,6 +108,9 @@ export function ZielnikView() {
         setStars(loaded);
         setMarginsByQuote(result.marginsByQuote ?? {});
         setThreads((result.nici ?? []).map(normalizeThreadFromDb));
+        if (result.warning) {
+          setError(result.warning);
+        }
       }
     } else {
       setStars(zielnik);

@@ -100,6 +100,9 @@ export function ConstellationView() {
       } else {
         setStars(starsFromCollections(result.collections));
         setThreads((result.nici ?? []).map(normalizeThreadFromDb));
+        if (result.warning) {
+          setError(result.warning);
+        }
       }
     } else {
       setStars(zielnik);
