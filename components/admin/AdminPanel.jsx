@@ -8,6 +8,8 @@ import {
   AdminShell,
 } from "@/components/admin/AdminShell";
 import { CatalogSection } from "@/components/admin/CatalogSection";
+import { MatchesSection } from "@/components/admin/MatchesSection";
+import { ReferralsSection } from "@/components/admin/ReferralsSection";
 import { QualitySection } from "@/components/admin/QualitySection";
 import { QuotesSection } from "@/components/admin/QuotesSection";
 
@@ -18,6 +20,8 @@ const TABS = [
   { id: "przesilenie", label: "Przesilenia" },
   { id: "cienie", label: "Cienie" },
   { id: "quality", label: "Jakość" },
+  { id: "matches", label: "Dopasowania" },
+  { id: "referrals", label: "Polecenia" },
 ];
 
 const IMPORT_META = {
@@ -136,6 +140,10 @@ export function AdminPanel() {
       {tab === "quotes" ? <QuotesSection password={password} /> : null}
 
       {tab === "quality" ? <QualitySection password={password} /> : null}
+
+      {tab === "matches" ? <MatchesSection password={password} /> : null}
+
+      {tab === "referrals" ? <ReferralsSection password={password} /> : null}
 
       {["glosses", "towers", "przesilenie", "cienie"].includes(tab) ? (
         <CatalogSection

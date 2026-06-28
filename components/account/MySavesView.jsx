@@ -187,6 +187,18 @@ export function MySavesView() {
             Odśwież
           </BrassButton>
           <Link
+            href="/zaproszenia"
+            className="block text-center font-sans text-xs text-brass hover:underline"
+          >
+            Zaproszenia i zaufanie
+          </Link>
+          <Link
+            href="/drzewo"
+            className="block text-center font-sans text-xs text-brass hover:underline"
+          >
+            Publiczne drzewo poleceń
+          </Link>
+          <Link
             href="/wyrocznia"
             className="block text-center font-sans text-xs text-brass hover:underline"
           >

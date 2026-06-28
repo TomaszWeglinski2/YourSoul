@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import {
+  clearPendingInviteCode,
+  claimInviteCode,
+  storePendingInviteCode,
+} from "@/lib/referralData";
 import {
   BrassButton,
   JourneyCard,
@@ -16,12 +21,35 @@ export function AuthForm({ mode = "login" }) {
   const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
   const returnTo = searchParams.get("next") ?? "/wrota";
+  const inviteFromUrl = searchParams.get("invite") ?? "";
   const isRegister = mode === "register";
+
+  useEffect(() => {
+    if (inviteFromUrl) {
+      setInviteCode(inviteFromUrl.toUpperCase());
+      storePendingInviteCode(inviteFromUrl);
+    }
+  }, [inviteFromUrl]);
+
+  async function applyInviteAfterAuth() {
+    const code = inviteCode.trim();
+    if (!code) return { ok: true };
+
+    const result = await claimInviteCode(code);
+    if (result.ok) {
+      clearPendingInviteCode();
+      return result;
+    }
+
+    storePendingInviteCode(code);
+    return result;
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -37,11 +65,20 @@ export function AuthForm({ mode = "login" }) {
           return;
         }
         if (result.needsConfirmation) {
+          if (inviteCode.trim()) {
+            storePendingInviteCode(inviteCode);
+          }
           setInfo(
-            "Konto utworzone. Sprawdź e-mail i potwierdź rejestrację, potem się zaloguj."
+            "Konto utworzone. Sprawdź e-mail — po logowaniu aktywujemy kod zaproszenia."
           );
           return;
         }
+
+        const inviteAfterSignup = await applyInviteAfterAuth();
+        if (!inviteAfterSignup.ok && inviteAfterSignup.error) {
+          setInfo(`Konto gotowe. Kod: ${inviteAfterSignup.error}`);
+        }
+
         router.push(returnTo);
         return;
       }
@@ -51,6 +88,8 @@ export function AuthForm({ mode = "login" }) {
         setError(result.error);
         return;
       }
+
+      await applyInviteAfterAuth();
 
       router.push(returnTo);
     } catch {
@@ -95,6 +134,16 @@ export function AuthForm({ mode = "login" }) {
             autoComplete={isRegister ? "new-password" : "current-password"}
             className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-sans text-sm text-[#ece6d8] placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
           />
+          {isRegister ? (
+            <input
+              type="text"
+              value={inviteCode}
+              onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
+              placeholder="Kod zaproszenia (opcjonalnie)"
+              autoComplete="off"
+              className="w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2.5 font-mono text-sm tracking-widest text-[#ece6d8] placeholder:font-sans placeholder:tracking-normal placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
+            />
+          ) : null}
           {error ? (
             <p className="font-sans text-xs text-tension">{error}</p>
           ) : null}

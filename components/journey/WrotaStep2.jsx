@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { SONDA } from "@/lib/journeyConstants";
 import { computeOdcisk } from "@/lib/journeyMath";
 import { upsertProfile } from "@/lib/userData";
+import { applyPendingInviteCodeIfAny } from "@/lib/referralData";
 import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
 import {
@@ -26,6 +27,7 @@ export function WrotaStep2() {
     completeWrota(sonda, honesty);
 
     if (isAuthenticated) {
+      await applyPendingInviteCodeIfAny();
       await upsertProfile({ worlds, odcisk });
     }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DICHO, ECHO } from "@/lib/journeyConstants";
 import { adjustMoodTowardQuote } from "@/lib/journeyMath";
+import { anonymousLabel } from "@/lib/matchEngine";
 import {
   addToCollection,
   fetchMyReactionsForMargins,
@@ -19,10 +20,6 @@ import {
   JourneyCard,
   JourneyShell,
 } from "@/components/journey/JourneyShell";
-
-function anonymousLabel(userId) {
-  return `Podróżnik ·${userId.slice(-4)}`;
-}
 
 async function callOracle(odcisk, nastroj, pokazane) {
   const response = await fetch("/api/oracle", {

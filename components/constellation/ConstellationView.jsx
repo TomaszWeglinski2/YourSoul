@@ -581,6 +581,13 @@ export function ConstellationView() {
             </button>
             <button
               type="button"
+              onClick={() => router.push("/ludzie")}
+              className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
+            >
+              spotkaj ludzi
+            </button>
+            <button
+              type="button"
               onClick={() => router.push("/zielnik")}
               className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
             >
