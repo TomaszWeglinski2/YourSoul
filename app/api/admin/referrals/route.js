@@ -74,6 +74,14 @@ async function setUserInviteAccess(supabase, userId, mode, noviceUntil) {
     return { ok: false, error: error.message };
   }
 
+  const { error: poolError } = await supabase.rpc("refresh_invite_pool_for_user", {
+    p_user_id: userId,
+  });
+
+  if (poolError) {
+    return { ok: false, error: poolError.message };
+  }
+
   return { ok: true };
 }
 

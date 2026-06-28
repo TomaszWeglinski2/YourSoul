@@ -306,13 +306,36 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT CASE
-    WHEN p.wrota_completed_at IS NULL THEN NULL
-    WHEN p.invite_access_tier = 'trusted' THEN p.wrota_completed_at
+    WHEN p.wrota_completed_at IS NULL AND p.novice_until_override IS NULL THEN NULL
+    WHEN p.invite_access_tier = 'trusted' THEN COALESCE(p.wrota_completed_at, p.novice_until_override)
     WHEN p.novice_until_override IS NOT NULL THEN p.novice_until_override
     ELSE p.wrota_completed_at + interval '30 days'
   END
   FROM public.profiles p
   WHERE p.id = p_user_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.refresh_invite_pool_for_user(p_user_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_pool integer;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN 0;
+  END IF;
+
+  new_pool := public.compute_invite_pool_for_user(p_user_id);
+
+  UPDATE public.profiles
+  SET invite_pool = new_pool, invite_pool_computed_at = now()
+  WHERE id = p_user_id;
+
+  RETURN new_pool;
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.finalize_referral_on_wrota(p_user_id uuid)
@@ -389,6 +412,26 @@ DROP TRIGGER IF EXISTS profiles_finalize_referral ON public.profiles;
 CREATE TRIGGER profiles_finalize_referral
   AFTER INSERT OR UPDATE OF wrota_completed_at, odcisk ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.trigger_finalize_referral_after_wrota();
+
+CREATE OR REPLACE FUNCTION public.trigger_refresh_pool_after_wrota()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.wrota_completed_at IS NOT NULL
+     AND (OLD.wrota_completed_at IS NULL OR TG_OP = 'INSERT') THEN
+    PERFORM public.refresh_invite_pool_for_user(NEW.id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS profiles_refresh_invite_pool ON public.profiles;
+CREATE TRIGGER profiles_refresh_invite_pool
+  AFTER INSERT OR UPDATE OF wrota_completed_at, trust_score ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.trigger_refresh_pool_after_wrota();
 
 -- ------------------------------------------------------------
 -- 9. claim + create invite codes
@@ -570,7 +613,7 @@ DROP FUNCTION IF EXISTS public.get_my_invite_codes();
 CREATE OR REPLACE FUNCTION public.get_my_referral_status()
 RETURNS jsonb
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -588,7 +631,7 @@ BEGIN
 
   SELECT * INTO p FROM public.profiles WHERE id = uid;
 
-  pool := COALESCE(p.invite_pool, 0);
+  pool := public.refresh_invite_pool_for_user(uid);
   used := public.count_active_invite_codes(uid);
   novice_until := public.effective_novice_until(uid);
   can_invite := public.can_create_invite_codes(uid);
@@ -675,6 +718,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_my_referral_status() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_invite_codes() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.refresh_invite_pool_for_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_public_referral_tree(integer) TO anon, authenticated;
 
 -- ------------------------------------------------------------

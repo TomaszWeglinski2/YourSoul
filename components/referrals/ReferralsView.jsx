@@ -144,6 +144,10 @@ export function ReferralsView() {
     !status?.can_create_codes &&
     noviceUntil &&
     noviceUntil.getTime() > Date.now();
+  const poolRemaining = status?.invite_codes_remaining ?? 0;
+  const poolTotal = status?.invite_pool ?? 0;
+  const poolExhausted = status?.can_create_codes && poolRemaining <= 0 && poolTotal > 0;
+  const needsWrota = !status?.can_create_codes && !stillNovice;
 
   return (
     <JourneyShell>
@@ -201,20 +205,23 @@ export function ReferralsView() {
         ) : status?.invite_access_tier === "trusted" && status?.can_create_codes ? (
           <p className="mb-4 rounded-[10px] border border-brass/25 bg-brass/10 px-3 py-2 font-sans text-xs text-mist">
             Masz status zaufany — możesz zapraszać od razu po Wrótach.
+            {poolExhausted
+              ? " Wykorzystałeś całą pulę — nowe sloty po ugruntowanych zaproszeniach lub wzroście zaufania."
+              : null}
           </p>
         ) : null}
 
         {status?.can_create_codes ? (
           <BrassButton
-            disabled={creating || (status?.invite_codes_remaining ?? 0) <= 0}
+            disabled={creating || poolRemaining <= 0}
             onClick={() => void handleCreateCode()}
             className="mb-4"
           >
             {creating ? "Generuję…" : "Wygeneruj kod zaproszenia"}
           </BrassButton>
-        ) : !stillNovice ? (
+        ) : needsWrota ? (
           <p className="mb-4 font-sans text-xs italic text-mistsoft">
-            Najpierw przejdź Wrota, aby zapraszać innych.
+            Najpierw przejdź Wrota (sonda + odcisk w profilu), aby zapraszać innych.
           </p>
         ) : null}
 
