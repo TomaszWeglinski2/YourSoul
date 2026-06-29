@@ -15,6 +15,7 @@ import {
 } from "@/lib/userData";
 import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
+import { usePanelAccess } from "@/hooks/usePanelAccess";
 import {
   BrassButton,
   JourneyCard,
@@ -37,8 +38,8 @@ async function callOracle(odcisk, nastroj, pokazane) {
 export function WyroczniaFlow() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { ready, canAccessPanels } = usePanelAccess();
   const {
-    wrotaComplete,
     odcisk,
     mood,
     di,
@@ -66,12 +67,6 @@ export function WyroczniaFlow() {
   const [publicMargins, setPublicMargins] = useState([]);
   const [reactedMarginIds, setReactedMarginIds] = useState(new Set());
   const [chorusLoading, setChorusLoading] = useState(false);
-
-  useEffect(() => {
-    if (!wrotaComplete) {
-      router.replace("/wrota");
-    }
-  }, [wrotaComplete, router]);
 
   useEffect(() => {
     if (step === "dicho" && di >= DICHO.length) {
@@ -208,8 +203,33 @@ export function WyroczniaFlow() {
     [odcisk, mood, shown, setCurrentQuote, addToShown]
   );
 
-  if (!wrotaComplete) {
-    return null;
+  useEffect(() => {
+    if (!ready || canAccessPanels) {
+      return;
+    }
+    router.replace("/wrota");
+  }, [ready, canAccessPanels, router]);
+
+  if (!ready) {
+    return (
+      <JourneyShell>
+        <JourneyCard dark>
+          <p className="font-sans text-sm italic text-mistsoft">Ładuję Wyrocznię…</p>
+        </JourneyCard>
+      </JourneyShell>
+    );
+  }
+
+  if (!canAccessPanels) {
+    return (
+      <JourneyShell>
+        <JourneyCard dark>
+          <p className="font-sans text-sm italic text-mistsoft">
+            Przekierowuję do Wrót…
+          </p>
+        </JourneyCard>
+      </JourneyShell>
+    );
   }
 
   if (step === "dicho") {

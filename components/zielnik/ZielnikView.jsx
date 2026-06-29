@@ -204,7 +204,7 @@ export function ZielnikView() {
 
   if (authLoading || loading) {
     return (
-      <JourneyShell wide>
+      <JourneyShell>
         <div className="saves-lib">
           <p className="font-sans text-sm italic text-mistsoft">Otwieram zielnik…</p>
         </div>
@@ -214,7 +214,7 @@ export function ZielnikView() {
 
   if (stars.length === 0 && threads.length === 0 && marginItems.length === 0) {
     return (
-      <JourneyShell wide>
+      <JourneyShell>
         <div className="saves-lib">
           <header className="sl-head">
             <p className="sl-kick">Twój zielnik</p>
@@ -382,8 +382,7 @@ export function ZielnikView() {
           onRefresh={() => void loadData({ soft: true })}
           refreshing={refreshing}
           links={[
-            { href: "/konstelacja", label: "Zobacz konstelację" },
-            { href: "/wyrocznia", label: "Wróć do Wyroczni" },
+            { href: "/konstelacja", label: "Zobacz konstelację jako niebo" },
           ]}
         />
       </div>

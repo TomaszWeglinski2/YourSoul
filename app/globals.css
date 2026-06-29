@@ -777,3 +777,63 @@ body {
     transition: none !important;
   }
 }
+
+/* ——— Nawigacja między panelami ——— */
+.appnav {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 2px 0 12px;
+}
+
+.appnav a {
+  color: var(--color-mistsoft);
+  font-size: 13.5px;
+  text-decoration: none;
+  padding: 9px 15px;
+  border-radius: 10px;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.appnav a:hover {
+  color: #ece6d8;
+  background: rgba(174, 182, 201, 0.07);
+  border-color: rgba(174, 182, 201, 0.12);
+}
+
+.appnav a.active {
+  color: #fff8ec;
+  background: var(--color-brass);
+  border-color: var(--color-brass);
+}
+
+.appnav a:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.saves-lib .sl-skylink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-brass);
+  font-size: 12.5px;
+  text-decoration: none;
+  padding: 7px 13px;
+  border: 1px solid rgba(196, 153, 90, 0.4);
+  border-radius: 9px;
+  background: rgba(196, 153, 90, 0.14);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.saves-lib .sl-skylink:hover {
+  background: rgba(196, 153, 90, 0.22);
+}
+
+.saves-lib .sl-skylink:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}

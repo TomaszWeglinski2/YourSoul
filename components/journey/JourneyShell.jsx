@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
+import { AppNav, isAppPanelPath } from "@/components/navigation/AppNav";
 
-export function JourneyShell({ children, wide = false }) {
+const WIDE_PANELS = new Set(["/moje-zapisy", "/zielnik"]);
+
+export function JourneyShell({ children, wide }) {
+  const pathname = usePathname();
   const router = useRouter();
   const { resetJourney } = useJourney();
   const { user, signOut, loading, displayName } = useAuth();
+  const showAppNav = isAppPanelPath(pathname);
+  const isWide = wide ?? WIDE_PANELS.has(pathname);
 
   function handleReset() {
     resetJourney();
@@ -18,7 +24,7 @@ export function JourneyShell({ children, wide = false }) {
   return (
     <main className="flex flex-1 justify-center p-3.5">
       <div
-        className={`flex w-full flex-col ${wide ? "max-w-[760px]" : "max-w-[440px]"}`}
+        className={`flex w-full flex-col ${isWide ? "max-w-[760px]" : "max-w-[440px]"}`}
       >
         <div className="mb-3.5 flex items-center justify-between px-0.5 opacity-[0.92]">
           <div className="flex items-center gap-2">
@@ -43,8 +49,8 @@ export function JourneyShell({ children, wide = false }) {
                 moje zapisy
               </Link>
             ) : null}
-            {!loading && (
-              user ? (
+            {!loading &&
+              (user ? (
                 <button
                   type="button"
                   onClick={() => signOut()}
@@ -59,8 +65,7 @@ export function JourneyShell({ children, wide = false }) {
                 >
                   zaloguj
                 </Link>
-              )
-            )}
+              ))}
             <button
               type="button"
               onClick={handleReset}
@@ -70,6 +75,7 @@ export function JourneyShell({ children, wide = false }) {
             </button>
           </div>
         </div>
+        {showAppNav ? <AppNav /> : null}
         {children}
       </div>
     </main>

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { computeOdcisk } from "@/lib/journeyMath";
 import { INITIAL_JOURNEY_STATE } from "@/lib/journeyConstants";
+import { hasValidOdcisk } from "@/lib/profileAccess";
 
 const JourneyContext = createContext(null);
 
@@ -109,6 +110,26 @@ export function JourneyProvider({ children }) {
     setState(INITIAL_JOURNEY_STATE);
   }, []);
 
+  const hydrateFromProfile = useCallback((profile) => {
+    setState((prev) => {
+      if (!hasValidOdcisk(profile?.odcisk)) {
+        return prev;
+      }
+      if (
+        prev.wrotaComplete &&
+        prev.odcisk?.join?.(",") === profile.odcisk?.join?.(",")
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        worlds: profile.worlds?.length ? profile.worlds : prev.worlds,
+        odcisk: profile.odcisk,
+        wrotaComplete: true,
+      };
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       ...state,
@@ -126,6 +147,7 @@ export function JourneyProvider({ children }) {
       setMood,
       setDimmedQuoteId,
       resetJourney,
+      hydrateFromProfile,
     }),
     [
       state,
@@ -143,6 +165,7 @@ export function JourneyProvider({ children }) {
       setMood,
       setDimmedQuoteId,
       resetJourney,
+      hydrateFromProfile,
     ]
   );
 

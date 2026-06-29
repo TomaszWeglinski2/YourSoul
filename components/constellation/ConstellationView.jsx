@@ -308,7 +308,7 @@ export function ConstellationView() {
               onClick={() => router.push("/wyrocznia")}
               className={error || !isAuthenticated ? "mt-0" : ""}
             >
-              Do Wyroczni
+              Zbierz pierwsze gwiazdy w Wyroczni
             </BrassButton>
           </div>
         </JourneyCard>
@@ -582,23 +582,9 @@ export function ConstellationView() {
             <button
               type="button"
               onClick={() => router.push("/ludzie")}
-              className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
-            >
-              spotkaj ludzi
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/zielnik")}
-              className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
-            >
-              Twój zielnik
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/wyrocznia")}
               className="block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
             >
-              wróć do Wyroczni
+              spotkaj ludzi
             </button>
           </div>
         )}

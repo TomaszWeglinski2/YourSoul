@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -149,7 +150,7 @@ export function MySavesView() {
   }
 
   return (
-    <JourneyShell wide>
+    <JourneyShell>
       <div className="saves-lib">
         <header className="sl-head">
           <p className="sl-kick">Twoje zapisy w bazie</p>
@@ -210,6 +211,7 @@ export function MySavesView() {
                 onGroupToggle={() => setGroupByAuthor((v) => !v)}
                 dupCounts={dupCounts}
                 getItemProps={konstItemProps}
+                skyLinkHref="/konstelacja"
                 emptySearch={{
                   icon: "⌕",
                   title: "Nic nie pasuje",
@@ -298,7 +300,6 @@ export function MySavesView() {
               links={[
                 { href: "/zaproszenia", label: "Zaproszenia i zaufanie" },
                 { href: "/drzewo", label: "Publiczne drzewo poleceń" },
-                { href: "/wyrocznia", label: "Wróć do Wyroczni" },
               ]}
             />
           </>

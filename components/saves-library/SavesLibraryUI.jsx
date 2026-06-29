@@ -239,6 +239,7 @@ export function KonstelacjaPane({
   onGroupToggle,
   dupCounts,
   getItemProps,
+  skyLinkHref,
   emptySearch,
   emptyDefault,
 }) {
@@ -257,6 +258,15 @@ export function KonstelacjaPane({
       <div className="sl-toolbar">
         <p className="sl-count">{countLabel}</p>
         <div className="sl-controls">
+          {skyLinkHref ? (
+            <Link
+              href={skyLinkHref}
+              className="sl-skylink"
+              title="Otwórz konstelację jako niebo — gwiazdy na mapie"
+            >
+              ✦ otwórz jako niebo
+            </Link>
+          ) : null}
           <select
             className="sl-select"
             value={sort}
