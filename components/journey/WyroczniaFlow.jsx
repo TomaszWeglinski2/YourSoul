@@ -21,6 +21,7 @@ import {
   JourneyCard,
   JourneyShell,
 } from "@/components/journey/JourneyShell";
+import { ShareQuoteButton } from "@/components/share/ShareQuoteButton";
 
 async function callOracle(odcisk, nastroj, pokazane) {
   const response = await fetch("/api/oracle", {
@@ -384,6 +385,7 @@ export function WyroczniaFlow() {
                     Zaloguj się, aby zapisać cytat i margines w bazie.
                   </p>
                 ) : null}
+                <ShareQuoteButton quoteId={current.id} />
                 <p className="mt-[7px] text-center font-sans text-[11px] italic text-mistsoft">
                   po lewej — nie zostaje; po prawej — wchodzi do Twojej
                   konstelacji
@@ -485,6 +487,8 @@ export function WyroczniaFlow() {
               ))
             )}
           </div>
+
+          <ShareQuoteButton quoteId={current.id} className="mt-3" />
 
           <div className="mt-[18px]">
             <p className="mb-2 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brassdeep">

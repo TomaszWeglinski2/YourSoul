@@ -14,6 +14,8 @@ import {
   toggleMarginReaction,
 } from "@/lib/userData";
 import { useAuth } from "@/context/AuthContext";
+import { ConnectGate } from "@/components/people/ConnectGate";
+import { isPayToConnectEnabled } from "@/lib/payToConnect";
 
 function formatComputedAt(iso) {
   if (!iso) return null;
@@ -38,6 +40,9 @@ export function PeopleView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reactedIds, setReactedIds] = useState(new Set());
+  const [connectTarget, setConnectTarget] = useState(null);
+
+  const payToConnect = isPayToConnectEnabled();
 
   const load = useCallback(async (selectedMode) => {
     setLoading(true);
@@ -227,6 +232,22 @@ export function PeopleView() {
                     </button>
                   ) : null}
 
+                  {payToConnect && row.public_margin_quote_id ? (
+                    <button
+                      type="button"
+                      className="people-connect-btn"
+                      onClick={() =>
+                        setConnectTarget({
+                          recipientId: row.matched_user_id,
+                          quoteId: row.public_margin_quote_id,
+                          marginBody: row.public_margin_body ?? "",
+                        })
+                      }
+                    >
+                      napisz 1:1 (pay-to-connect)
+                    </button>
+                  ) : null}
+
                   <p className="mt-2 font-sans text-[10px] text-mistsoft/60">
                     IDF {row.idf_score.toFixed(2)} · odległość odcisku{" "}
                     {row.odcisk_distance.toFixed(2)}
@@ -245,6 +266,14 @@ export function PeopleView() {
           wróć do konstelacji
         </button>
       </JourneyCard>
+
+      <ConnectGate
+        open={Boolean(connectTarget)}
+        onClose={() => setConnectTarget(null)}
+        recipientId={connectTarget?.recipientId}
+        quoteId={connectTarget?.quoteId}
+        marginBody={connectTarget?.marginBody}
+      />
     </JourneyShell>
   );
 }
