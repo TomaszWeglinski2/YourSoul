@@ -11,6 +11,7 @@ import {
   normalizeStarFromDb,
   normalizeThreadFromDb,
   tensionAxis,
+  threadKey,
 } from "@/lib/constellationMath";
 import {
   fetchConstellationData,
@@ -66,13 +67,195 @@ function TowerModal({ tower, stars, onClose }) {
   );
 }
 
+const THREAD_TYPE_LABELS = {
+  pokrewienstwo: "Pokrewieństwo",
+  napiecie: "Napięcie",
+};
+
+function StarDetailPanel({ star, margin }) {
+  if (!star) return null;
+
+  return (
+    <div className="mt-3 rounded-[11px] border border-brass/30 bg-brass/10 px-3.5 py-3">
+      <p className="mb-1 font-sans text-[10px] uppercase tracking-[0.14em] text-brass">
+        Gwiazda · {lastName(star.a)}
+      </p>
+      <p className="font-serif text-base italic leading-normal text-[#ece6d8]">
+        „{star.t}"
+      </p>
+      <p className="mt-1.5 font-sans text-[11px] text-brass">
+        — {star.a}
+        {star.w ? `, ${star.w}` : ""}
+      </p>
+      {star.g ? (
+        <p className="mt-2.5 border-l-2 border-brass/35 pl-2.5 font-serif text-sm leading-relaxed text-mist">
+          {star.g}
+        </p>
+      ) : null}
+      {margin?.body?.trim() ? (
+        <div className="mt-2.5 rounded-lg border border-brass/20 bg-black/20 px-2.5 py-2">
+          <p className="mb-1 font-sans text-[10px] uppercase tracking-wide text-brassdeep">
+            Twój margines
+            {margin.visibility === "public" ? " · publiczny" : " · prywatny"}
+          </p>
+          <p className="font-serif text-sm italic text-[#e6e0d2]">{margin.body}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ThreadDetailPanel({ thread, starById, marginsByQuote }) {
+  if (!thread) return null;
+
+  const qa = starById[thread.a];
+  const qb = starById[thread.b];
+  const isTension = thread.type === "napiecie";
+  const marginA = marginsByQuote[thread.a];
+  const marginB = marginsByQuote[thread.b];
+
+  return (
+    <div
+      className={`mt-3 rounded-[11px] border px-3.5 py-3 ${
+        isTension
+          ? "border-tension/35 bg-tension/10"
+          : "border-brass/30 bg-brass/10"
+      }`}
+    >
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <p
+          className={`font-sans text-[10px] uppercase tracking-[0.14em] ${
+            isTension ? "text-tension" : "text-brass"
+          }`}
+        >
+          {isTension ? "↮" : "✦"} {THREAD_TYPE_LABELS[thread.type] ?? thread.type}
+        </p>
+        {isTension && thread.axis != null && thread.axis >= 0 ? (
+          <span className="rounded-full border border-tension/40 px-2 py-0.5 font-sans text-[10px] text-mistsoft">
+            oś {AXES[thread.axis]}
+          </span>
+        ) : null}
+      </div>
+      <p className="font-serif text-base italic leading-normal text-[#ece6d8]">
+        „{thread.glosa}"
+      </p>
+      <p className="mt-2 font-sans text-[11px] text-mistsoft">
+        Twoje słowa wiążą{" "}
+        <strong className="text-mist">{qa ? lastName(qa.a) : "?"}</strong> z{" "}
+        <strong className="text-mist">{qb ? lastName(qb.a) : "?"}</strong>
+      </p>
+
+      <div className="mt-3 space-y-2.5 border-t border-white/10 pt-2.5">
+        {[qa, qb].filter(Boolean).map((star) => {
+          const margin = marginsByQuote[star.id];
+          return (
+            <div key={star.id} className="rounded-lg bg-black/20 px-2.5 py-2">
+              <p className="font-serif text-sm italic text-[#ece6d8]">
+                „{star.t}"
+              </p>
+              <p className="mt-0.5 font-sans text-[10.5px] text-brass">
+                — {star.a}
+              </p>
+              {star.g ? (
+                <p className="mt-1.5 font-serif text-xs leading-relaxed text-mistsoft">
+                  {star.g}
+                </p>
+              ) : null}
+              {margin?.body?.trim() ? (
+                <p className="mt-1.5 font-serif text-xs italic text-mist">
+                  Margines: {margin.body}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ThreadVisual({ thread, pa, pb, selected }) {
+  const isTension = thread.type === "napiecie";
+  const opacity = selected ? 1 : isTension ? 0.9 : 0.55;
+  const width = selected ? 2.4 : isTension ? 1.3 : 1.2;
+
+  if (isTension) {
+    return (
+      <g pointerEvents="none">
+        <line
+          x1={pa.x}
+          y1={pa.y - 3}
+          x2={pb.x}
+          y2={pb.y - 3}
+          stroke={selected ? "#b8c0e8" : "#8a93c4"}
+          strokeWidth={width}
+          strokeDasharray="5 4"
+          opacity={opacity}
+        />
+        <line
+          x1={pa.x}
+          y1={pa.y + 3}
+          x2={pb.x}
+          y2={pb.y + 3}
+          stroke={selected ? "#7a84b8" : "#5e68a0"}
+          strokeWidth={width}
+          strokeDasharray="5 4"
+          opacity={opacity}
+        />
+      </g>
+    );
+  }
+
+  return (
+    <line
+      pointerEvents="none"
+      x1={pa.x}
+      y1={pa.y}
+      x2={pb.x}
+      y2={pb.y}
+      stroke={selected ? "#e8c88a" : "#c4995a"}
+      strokeWidth={width}
+      opacity={opacity}
+    />
+  );
+}
+
+function ThreadHitArea({ pa, pb, onClick }) {
+  return (
+    <line
+      x1={pa.x}
+      y1={pa.y}
+      x2={pb.x}
+      y2={pb.y}
+      stroke="transparent"
+      strokeWidth={16}
+      className="cursor-pointer"
+      pointerEvents="stroke"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Otwórz szczegóły nici"
+    />
+  );
+}
+
 export function ConstellationView() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { zielnik, dimmedQuoteId, setDimmedQuoteId } = useJourney();
+  const { zielnik, dimmedQuoteId, setDimmedQuoteId, marg, pub } = useJourney();
 
   const [stars, setStars] = useState([]);
   const [threads, setThreads] = useState([]);
+  const [marginsByQuote, setMarginsByQuote] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -84,6 +267,7 @@ export function ConstellationView() {
   const [saving, setSaving] = useState(false);
 
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [selectedThreadKey, setSelectedThreadKey] = useState(null);
   const [activeTower, setActiveTower] = useState(null);
   const [przesilenie, setPrzesilenie] = useState(null);
 
@@ -97,9 +281,11 @@ export function ConstellationView() {
         setError(result.error);
         setStars([]);
         setThreads([]);
+        setMarginsByQuote({});
       } else {
         setStars(starsFromCollections(result.collections));
         setThreads((result.nici ?? []).map(normalizeThreadFromDb));
+        setMarginsByQuote(result.marginsByQuote ?? {});
         if (result.warning) {
           setError(result.warning);
         }
@@ -107,10 +293,26 @@ export function ConstellationView() {
     } else {
       setStars(zielnik);
       setThreads([]);
+      const localMargins = {};
+      Object.entries(marg).forEach(([quoteId, body]) => {
+        if (body?.trim()) {
+          localMargins[quoteId] = {
+            body,
+            visibility: pub[quoteId] ? "public" : "private",
+          };
+        }
+      });
+      setMarginsByQuote(localMargins);
     }
 
     setLoading(false);
-  }, [isAuthenticated, zielnik]);
+  }, [isAuthenticated, zielnik, marg, pub]);
+
+  const selectedThread = useMemo(() => {
+    if (selectedThreadKey == null) return null;
+    const idx = threads.findIndex((t, i) => threadKey(t, i) === selectedThreadKey);
+    return idx >= 0 ? threads[idx] : null;
+  }, [threads, selectedThreadKey]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -149,8 +351,16 @@ export function ConstellationView() {
       return;
     }
     if (!linkMode) {
+      setSelectedThreadKey(null);
       setSelectedQuote(starById[starId] ?? null);
     }
+  }
+
+  function handleThreadClick(thread, idx) {
+    if (linkMode) return;
+    const key = threadKey(thread, idx);
+    setSelectedQuote(null);
+    setSelectedThreadKey((prev) => (prev === key ? null : key));
   }
 
   function cancelLinking() {
@@ -159,6 +369,7 @@ export function ConstellationView() {
     setLinkType(null);
     setBindText("");
     setBindError("");
+    setSelectedThreadKey(null);
   }
 
   async function handleBind() {
@@ -354,44 +565,16 @@ export function ConstellationView() {
               const pa = positions[thread.a];
               const pb = positions[thread.b];
               if (!pa || !pb) return null;
-
-              if (thread.type === "napiecie") {
-                return (
-                  <g key={thread.id ?? idx}>
-                    <line
-                      x1={pa.x}
-                      y1={pa.y - 3}
-                      x2={pb.x}
-                      y2={pb.y - 3}
-                      stroke="#8a93c4"
-                      strokeWidth={1.3}
-                      strokeDasharray="5 4"
-                      opacity={0.9}
-                    />
-                    <line
-                      x1={pa.x}
-                      y1={pa.y + 3}
-                      x2={pb.x}
-                      y2={pb.y + 3}
-                      stroke="#5e68a0"
-                      strokeWidth={1.3}
-                      strokeDasharray="5 4"
-                      opacity={0.9}
-                    />
-                  </g>
-                );
-              }
+              const key = threadKey(thread, idx);
+              const selected = selectedThreadKey === key;
 
               return (
-                <line
-                  key={thread.id ?? idx}
-                  x1={pa.x}
-                  y1={pa.y}
-                  x2={pb.x}
-                  y2={pb.y}
-                  stroke="#c4995a"
-                  strokeWidth={1.2}
-                  opacity={0.55}
+                <ThreadVisual
+                  key={key}
+                  thread={thread}
+                  pa={pa}
+                  pb={pb}
+                  selected={selected}
                 />
               );
             })}
@@ -438,7 +621,8 @@ export function ConstellationView() {
               if (!p) return null;
 
               const dimmed = dimmedQuoteId === star.id;
-              const selected = selectedIds.includes(star.id);
+              const linking = selectedIds.includes(star.id);
+              const inspecting = selectedQuote?.id === star.id;
               const ly = p.y > 205 ? p.y + 18 : p.y - 12;
 
               return (
@@ -451,10 +635,10 @@ export function ConstellationView() {
                   <circle
                     cx={p.x}
                     cy={p.y}
-                    r={selected ? 8 : 6}
-                    fill={selected ? "#fff3dc" : "#f3e7cf"}
-                    stroke={selected ? "#fff3dc" : "#c4995a"}
-                    strokeWidth={selected ? 2 : 1.3}
+                    r={linking ? 8 : inspecting ? 7 : 6}
+                    fill={linking || inspecting ? "#fff3dc" : "#f3e7cf"}
+                    stroke={linking || inspecting ? "#fff3dc" : "#c4995a"}
+                    strokeWidth={linking || inspecting ? 2 : 1.3}
                   />
                   <circle cx={p.x} cy={p.y} r={2.1} fill="#9a7236" />
                   <text
@@ -468,25 +652,45 @@ export function ConstellationView() {
                 </g>
               );
             })}
+
+            {!linkMode
+              ? threads.map((thread, idx) => {
+                  const pa = positions[thread.a];
+                  const pb = positions[thread.b];
+                  if (!pa || !pb) return null;
+                  return (
+                    <ThreadHitArea
+                      key={`hit-${threadKey(thread, idx)}`}
+                      pa={pa}
+                      pb={pb}
+                      onClick={() => handleThreadClick(thread, idx)}
+                    />
+                  );
+                })
+              : null}
           </svg>
         </div>
 
-        {selectedQuote && !linkMode ? (
-          <div className="mt-3 rounded-r-lg border-l-2 border-brass bg-brass/10 px-3.5 py-3 font-serif text-base leading-normal text-[#ece6d8]">
-            „{selectedQuote.t}"
-            <span className="mt-1.5 block font-sans text-[11px] text-brass">
-              — {selectedQuote.a}
-              {selectedQuote.w ? `, ${selectedQuote.w}` : ""}
-            </span>
-          </div>
+        {!linkMode && selectedQuote ? (
+          <StarDetailPanel
+            star={selectedQuote}
+            margin={marginsByQuote[selectedQuote.id]}
+          />
+        ) : null}
+
+        {!linkMode && selectedThread ? (
+          <ThreadDetailPanel
+            thread={selectedThread}
+            starById={starById}
+            marginsByQuote={marginsByQuote}
+          />
         ) : null}
 
         <p className="mt-3 font-sans text-[11px] italic leading-relaxed text-mistsoft">
-          Złota pleciona Wieża to sens ze zgody. Chłodna, rozszczepiona nić to
-          napięcie, które sam nazwałeś. Przesilenia rodzą się dopiero, gdy
-          poprowadzisz nić napięcia między dwiema gwiazdami i ją nazwiesz.
-          Każda gwiazda jest podpisana autorem — dotknij jej, by zobaczyć pełny
-          cytat.
+          Dotknij gwiazdy — cytat, glosa i Twój margines. Dotknij nici — złotej
+          (pokrewieństwo) lub chłodnej, rozszczepionej (napięcie) — zobaczysz
+          słowa, którymi ją związałeś, i oba cytaty. Wieża to sens ze zgody wielu
+          osi; przesilenia rodzą się z nici napięcia.
         </p>
 
         {linkMode ? (
@@ -574,6 +778,7 @@ export function ConstellationView() {
                 setSelectedIds([]);
                 setLinkType(null);
                 setSelectedQuote(null);
+                setSelectedThreadKey(null);
               }}
               className="mb-2 block w-full rounded-[11px] border border-brass/45 bg-brass/5 px-3 py-2.5 font-sans text-[13px] text-[#e6e0d2] transition-all duration-150 hover:border-brass hover:bg-brass/15"
             >
