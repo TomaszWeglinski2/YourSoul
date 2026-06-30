@@ -250,3 +250,5 @@ GRANT EXECUTE ON FUNCTION public.create_conversation(uuid, bigint, text) TO auth
 GRANT EXECUTE ON FUNCTION public.stub_unlock_conversation(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_conversation_thread(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.send_conversation_message(uuid, text) TO authenticated;
+
+-- Skrzynka / nieprzeczytane: uruchom też Docs/supabase-conversations-inbox.sql

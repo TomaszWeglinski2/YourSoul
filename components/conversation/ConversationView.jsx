@@ -9,11 +9,12 @@ import {
 } from "@/components/journey/JourneyShell";
 import {
   fetchConversationThread,
+  markConversationRead,
   sendConversationMessage,
   stubUnlockConversation,
 } from "@/lib/conversationData";
 import { isPayToConnectEnabled, PAY_TO_CONNECT_STUB_PRICE } from "@/lib/payToConnect";
-import { anonymousLabel } from "@/lib/matchEngine";
+import { anonymousLabel, peerIdentityHint } from "@/lib/matchEngine";
 import { useAuth } from "@/context/AuthContext";
 
 function formatTime(iso) {
@@ -46,6 +47,12 @@ export function ConversationView({ conversationId }) {
       setThread(null);
     } else {
       setThread(result.thread);
+      if (
+        result.thread.payment_status === "stub_unlocked" ||
+        result.thread.payment_status === "paid"
+      ) {
+        await markConversationRead(conversationId);
+      }
     }
     setLoading(false);
   }, [conversationId]);
@@ -158,9 +165,14 @@ export function ConversationView({ conversationId }) {
         <p className="mb-3 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brass">
           Rozmowa 1:1
         </p>
-        <h1 className="mb-2 font-serif text-[22px] font-medium leading-tight text-[#ece6d8]">
+        <h1 className="mb-1 font-serif text-[22px] font-medium leading-tight text-[#ece6d8]">
           {anonymousLabel(otherId)}
         </h1>
+        {peerIdentityHint(user?.id) ? (
+          <p className="mb-2 font-sans text-[10px] text-mistsoft/75">
+            {peerIdentityHint(user?.id)}
+          </p>
+        ) : null}
 
         <section className="conversation-anchor">
           <p className="conversation-anchor__label">Wspólna nić</p>
@@ -245,10 +257,10 @@ export function ConversationView({ conversationId }) {
 
         <button
           type="button"
-          onClick={() => router.push("/ludzie")}
+          onClick={() => router.push("/rozmowy")}
           className="mt-4 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
         >
-          wróć do dopasowań
+          wróć do rozmów prywatnych
         </button>
       </JourneyCard>
     </JourneyShell>

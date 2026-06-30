@@ -7,12 +7,13 @@ import {
   JourneyCard,
   JourneyShell,
 } from "@/components/journey/JourneyShell";
-import { anonymousLabel, matchTag, MATCH_MODES } from "@/lib/matchEngine";
+import { anonymousLabel, matchTag, MATCH_MODES, peerIdentityHint } from "@/lib/matchEngine";
 import {
   fetchMatchCards,
   fetchMyReactionsForMargins,
   toggleMarginReaction,
 } from "@/lib/userData";
+import { fetchMyConversations } from "@/lib/conversationData";
 import { useAuth } from "@/context/AuthContext";
 import { ConnectGate } from "@/components/people/ConnectGate";
 import { isPayToConnectEnabled } from "@/lib/payToConnect";
@@ -31,7 +32,7 @@ function formatComputedAt(iso) {
 
 export function PeopleView() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
 
   const [mode, setMode] = useState("like_me");
   const [cards, setCards] = useState([]);
@@ -41,6 +42,7 @@ export function PeopleView() {
   const [error, setError] = useState("");
   const [reactedIds, setReactedIds] = useState(new Set());
   const [connectTarget, setConnectTarget] = useState(null);
+  const [conversationsByPeer, setConversationsByPeer] = useState(new Map());
 
   const payToConnect = isPayToConnectEnabled();
 
@@ -67,6 +69,16 @@ export function PeopleView() {
 
     const reactions = await fetchMyReactionsForMargins(marginIds);
     setReactedIds(reactions.reactedIds ?? new Set());
+
+    const convResult = await fetchMyConversations();
+    if (convResult.ok) {
+      const map = new Map();
+      for (const row of convResult.conversations) {
+        map.set(row.other_user_id, row);
+      }
+      setConversationsByPeer(map);
+    }
+
     setLoading(false);
   }, []);
 
@@ -146,7 +158,20 @@ export function PeopleView() {
               Ostatnie dopasowanie: {formatComputedAt(computedAt)}.
             </span>
           ) : null}
+          {peerIdentityHint(user?.id) ? (
+            <span className="mt-1 block opacity-80">
+              {peerIdentityHint(user?.id)}
+            </span>
+          ) : null}
         </p>
+
+        <button
+          type="button"
+          onClick={() => router.push("/rozmowy")}
+          className="mb-4 block w-full rounded-[11px] border border-brass/35 bg-brass/10 px-3 py-2.5 font-sans text-[13px] text-brass transition-all duration-150 hover:bg-brass/18"
+        >
+          rozmowy prywatne
+        </button>
 
         <div className="mb-4 flex gap-2">
           {MATCH_MODES.map((item) => (
@@ -190,6 +215,12 @@ export function PeopleView() {
               const reacted = row.public_margin_id
                 ? reactedIds.has(row.public_margin_id)
                 : false;
+              const existing = conversationsByPeer.get(row.matched_user_id);
+              const hasAttention =
+                existing &&
+                (existing.is_new ||
+                  existing.needs_reply ||
+                  existing.unread_count > 0);
 
               return (
                 <div
@@ -233,19 +264,33 @@ export function PeopleView() {
                   ) : null}
 
                   {payToConnect && row.public_margin_quote_id ? (
-                    <button
-                      type="button"
-                      className="people-connect-btn"
-                      onClick={() =>
-                        setConnectTarget({
-                          recipientId: row.matched_user_id,
-                          quoteId: row.public_margin_quote_id,
-                          marginBody: row.public_margin_body ?? "",
-                        })
-                      }
-                    >
-                      napisz 1:1 (pay-to-connect)
-                    </button>
+                    existing ? (
+                      <button
+                        type="button"
+                        className={`people-connect-btn ${hasAttention ? "people-connect-btn--alert" : ""}`}
+                        onClick={() =>
+                          router.push(`/rozmowa/${existing.conversation_id}`)
+                        }
+                      >
+                        {hasAttention
+                          ? "otwórz rozmowę · czeka na Ciebie"
+                          : "kontynuuj rozmowę"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="people-connect-btn"
+                        onClick={() =>
+                          setConnectTarget({
+                            recipientId: row.matched_user_id,
+                            quoteId: row.public_margin_quote_id,
+                            marginBody: row.public_margin_body ?? "",
+                          })
+                        }
+                      >
+                        napisz 1:1 (pay-to-connect)
+                      </button>
+                    )
                   ) : null}
 
                   <p className="mt-2 font-sans text-[10px] text-mistsoft/60">

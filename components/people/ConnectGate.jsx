@@ -70,17 +70,15 @@ export function ConnectGate({
       return;
     }
 
-    if (payEnabled) {
-      const unlocked = await stubUnlockConversation(created.conversationId);
-      if (!unlocked.ok) {
-        setError(unlocked.error);
-        setBusy(false);
-        return;
-      }
+    const unlocked = await stubUnlockConversation(created.conversationId);
+    if (!unlocked.ok) {
+      setError(unlocked.error);
+      setBusy(false);
+      return;
     }
 
     router.push(`/rozmowa/${created.conversationId}`);
-  }, [recipientId, quoteId, marginBody, payEnabled, router]);
+  }, [recipientId, quoteId, marginBody, router]);
 
   if (!open) {
     return null;

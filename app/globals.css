@@ -787,6 +787,10 @@ body {
 }
 
 .appnav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--color-mistsoft);
   font-size: 13.5px;
   text-decoration: none;
@@ -812,6 +816,140 @@ body {
 .appnav a:focus-visible {
   outline: 2px solid var(--color-brass);
   outline-offset: 2px;
+}
+
+.appnav__badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ece6d8;
+  color: var(--color-dusk);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.appnav a.active .appnav__badge {
+  background: #141826;
+  color: #fff8ec;
+}
+
+/* ——— Skrzynka rozmów ——— */
+.inbox-empty {
+  border-radius: 10px;
+  border: 1px solid rgba(174, 182, 201, 0.18);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 14px;
+}
+
+.inbox-empty__link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--color-brass);
+  text-decoration: none;
+}
+
+.inbox-empty__link:hover {
+  color: #fff8ec;
+}
+
+.inbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inbox-row {
+  display: block;
+  border-radius: 11px;
+  border: 1px solid rgba(174, 182, 201, 0.18);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 12px 13px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s;
+}
+
+.inbox-row:hover {
+  border-color: rgba(196, 153, 90, 0.35);
+  background: rgba(196, 153, 90, 0.08);
+}
+
+.inbox-row--new,
+.inbox-row--reply {
+  border-color: rgba(196, 153, 90, 0.45);
+}
+
+.inbox-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.inbox-row__name {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: #ece6d8;
+}
+
+.inbox-row__badge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.inbox-row__badge--new {
+  background: rgba(196, 153, 90, 0.22);
+  color: var(--color-brass);
+}
+
+.inbox-row__badge--reply {
+  background: rgba(138, 147, 196, 0.22);
+  color: var(--color-tension);
+}
+
+.inbox-row__badge--pending {
+  background: rgba(174, 182, 201, 0.15);
+  color: var(--color-mistsoft);
+}
+
+.inbox-row__quote {
+  margin: 0 0 4px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--color-mistsoft);
+}
+
+.inbox-row__preview {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ece6d8;
+}
+
+.inbox-row__time {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--color-mistsoft);
+}
+
+.people-connect-btn--alert {
+  border-color: var(--color-brass);
+  background: rgba(196, 153, 90, 0.22);
+  color: #fff8ec;
 }
 
 .saves-lib .sl-skylink {
