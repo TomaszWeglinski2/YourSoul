@@ -8,6 +8,7 @@ import {
   ImportSummary,
 } from "@/components/admin/AdminShell";
 import { getSampleDescription } from "@/lib/adminSamples";
+import { ExportSection } from "@/components/admin/ExportSection";
 
 export function ImportSection({
   password,
@@ -133,6 +134,12 @@ export function ImportSection({
         </form>
       </AdminCard>
       <ImportSummary summary={summary} />
+      <ExportSection
+        password={password}
+        type={type}
+        showQuoteFilters={type === "quotes"}
+        showAxesPromptExport={type === "quotes"}
+      />
     </>
   );
 }

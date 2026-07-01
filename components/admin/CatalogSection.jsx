@@ -170,7 +170,7 @@ export function CatalogSection({
 
   function handleImportSummary(data) {
     onSummary(data);
-    if (data?.added > 0) {
+    if ((data?.added ?? 0) > 0 || (data?.updated ?? 0) > 0) {
       void loadItems();
     }
   }

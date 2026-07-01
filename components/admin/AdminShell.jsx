@@ -80,12 +80,18 @@ export function ImportSummary({ summary }) {
   return (
     <AdminCard dark>
       <AdminKick dark>Podsumowanie importu</AdminKick>
-      <div className="mb-4 grid grid-cols-2 gap-3 font-sans text-sm">
+      <div className="mb-4 grid grid-cols-2 gap-3 font-sans text-sm sm:grid-cols-3">
         <div className="rounded-[10px] border border-brass/30 bg-brass/10 px-3 py-2">
-          <p className="text-xs text-mistsoft">Dodano / zaktualizowano</p>
-          <p className="font-serif text-2xl text-[#ece6d8]">{summary.added}</p>
+          <p className="text-xs text-mistsoft">Dodano</p>
+          <p className="font-serif text-2xl text-[#ece6d8]">{summary.added ?? 0}</p>
         </div>
         <div className="rounded-[10px] border border-brass/30 bg-brass/10 px-3 py-2">
+          <p className="text-xs text-mistsoft">Zaktualizowano</p>
+          <p className="font-serif text-2xl text-[#ece6d8]">
+            {summary.updated ?? 0}
+          </p>
+        </div>
+        <div className="rounded-[10px] border border-brass/30 bg-brass/10 px-3 py-2 sm:col-span-1 col-span-2">
           <p className="text-xs text-mistsoft">Pominięto</p>
           <p className="font-serif text-2xl text-[#ece6d8]">
             {summary.skipped?.length ?? 0}

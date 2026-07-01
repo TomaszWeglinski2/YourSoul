@@ -7,15 +7,22 @@ Hasło: zmienna `ADMIN_PASSWORD`. Import zawsze po stronie serwera (`service_rol
 ## 1. Cytaty (`quotes` + opcjonalnie `quote_glosses`)
 
 **Arkusz:** pierwszy w pliku  
-**Nagłówki (wiersz 1):**
+**Nagłówki (wiersz 1) — import:**
 
-| text | author | work | year | rights | dom | sens | zachwyt | wspolnota | tajemnica | prowokacja | glosa | source_verified |
-|------|--------|------|------|--------|-----|------|---------|-----------|-----------|------------|-------|-----------------|
-| treść cytatu | Autor | Dzieło | 1920 | public_domain | Filozofia | 0.5 | -0.5 | 0 | 0.7 | -0.3 | opcjonalna glosa | true |
+| id | text | author | work | year | rights | dom | sens | zachwyt | wspolnota | tajemnica | prowokacja | glosa | source_verified |
+|----|------|--------|------|------|--------|-----|------|---------|-----------|-----------|------------|-------|-----------------|
 
+- `id` — opcjonalne przy imporcie; przy eksporcie zawsze na początku. Wiersz z `id` → UPDATE; bez `id` → INSERT lub UPDATE po `text` + `author` (bez duplikatów).
 - Osie: liczby −1 … +1 (w panelu suwaki skokowe: −1 / −0.5 / 0 / +0.5 / +1).
 - `dom`: jedna domena lub lista rozdzielona przecinkiem.
 - `source_verified`: `true` / `false` / puste (= false).
+
+**Eksport (panel /admin → zakładka Cytaty):**
+- „Pobierz z bazy jako .xlsx” — pełny korpus z kolumną `id`.
+- Filtry opcjonalne: tylko nieweryfikowane, domena (`dom`), data `created_at` od.
+- „Cytaty z osiami (do generowania powiązań)” — lekki plik: `id, author, text, sens, zachwyt, wspolnota, tajemnica, prowokacja`.
+
+**SQL deduplikacji:** `Docs/supabase-admin-quotes-unique.sql` — unikalny indeks `(text, author)`.
 
 ---
 
@@ -83,3 +90,20 @@ Hasło: zmienna `ADMIN_PASSWORD`. Import zawsze po stronie serwera (`service_rol
 2. `supabase-admin-templates.sql` (tabele `towers`, `przesilenie_templates`)
 
 Potem dopiero panel /admin z pięcioma sekcjami (Krok 8).
+
+---
+
+## Eksport z bazy (panel /admin)
+
+Hasło: `ADMIN_PASSWORD`. Route: `POST /api/admin/export` (service_role, tylko admin).
+
+| Zakładka | Przycisk | Typ API `type` |
+|----------|----------|----------------|
+| Cytaty | Pobierz z bazy jako .xlsx | `quotes` |
+| Cytaty | Cytaty z osiami… | `quotes-axes-prompt` |
+| Glosy | Pobierz z bazy jako .xlsx | `glosses` |
+| Wieże | Pobierz z bazy jako .xlsx | `towers` |
+| Przesilenia | Pobierz z bazy jako .xlsx | `przesilenie` |
+| Cienie | Pobierz z bazy jako .xlsx | `cienie` |
+
+Kolumny eksportu = kolumny importu (cytaty: + `id` z przodu). Pliki nadają się do edycji i re-importu.

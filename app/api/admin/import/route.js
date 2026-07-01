@@ -70,9 +70,13 @@ export async function POST(request) {
 
     if (type === "quotes") {
       const { valid, skipped, errors: validationErrors } = validateQuoteRows(rows);
-      const { added, errors: insertErrors } = await importQuotesToDb(supabase, valid);
+      const { added, updated, errors: insertErrors } = await importQuotesToDb(
+        supabase,
+        valid
+      );
       return Response.json({
         added,
+        updated,
         skipped,
         warnings: [],
         errors: [...validationErrors, ...insertErrors],

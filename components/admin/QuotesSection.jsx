@@ -187,11 +187,13 @@ export function QuotesSection({ password }) {
           password={password}
           type="quotes"
           title="Import cytatów"
-          description="Wgraj .xlsx z korpussem. Po imporcie możesz skorygować osie suwakami poniżej."
+          description="Wgraj .xlsx z korpussem. Wiersz z id aktualizuje cytat; bez id — INSERT lub UPDATE po text+author (bez duplikatów). Po imporcie możesz skorygować osie suwakami poniżej."
           summary={importSummary}
           onSummary={(data) => {
             setImportSummary(data);
-            if (data?.added > 0) void loadQuotes();
+            if ((data?.added ?? 0) > 0 || (data?.updated ?? 0) > 0) {
+              void loadQuotes();
+            }
           }}
         />
 
@@ -205,7 +207,7 @@ export function QuotesSection({ password }) {
             className="mb-3 w-full rounded-[10px] border border-brass/35 bg-white/10 px-3 py-2 font-sans text-sm text-[#ece6d8] placeholder:text-mistsoft/70 focus:border-brass focus:outline-none"
           />
           <p className="mb-3 font-sans text-[10px] text-mistsoft">
-            Kolumny importu: {EXPECTED_COLUMNS.join(", ")}
+            Kolumny importu: id (opcjonalne), {EXPECTED_COLUMNS.join(", ")}
           </p>
           {loading ? (
             <p className="font-sans text-sm italic text-mistsoft">Ładuję…</p>
