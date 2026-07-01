@@ -16,7 +16,8 @@ const TILES = [
   { href: "/konstelacja", label: "Konstelacja", hint: "Twoje niebo" },
   { href: "/zielnik", label: "Zielnik", hint: "Prywatna antologia" },
   { href: "/rozmowy", label: "Rozmowy", hint: "Prywatne 1:1" },
-  { href: "/ludzie", label: "Pracownia", hint: "Spotkania na orbicie" },
+  { href: "/pracownia", label: "Pracownia", hint: "Własna twórczość" },
+  { href: "/ludzie", label: "Spotkania", hint: "Rezonans na orbicie" },
   { href: "/moje-zapisy", label: "Moje zapisy", hint: "Profil i historia" },
 ];
 

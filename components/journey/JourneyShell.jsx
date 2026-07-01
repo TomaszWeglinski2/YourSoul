@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useJourney } from "@/context/JourneyContext";
 import { AppNav, isAppPanelPath } from "@/components/navigation/AppNav";
 
-const WIDE_PANELS = new Set(["/moje-zapisy", "/zielnik"]);
+const WIDE_PANELS = new Set(["/moje-zapisy", "/zielnik", "/pracownia"]);
 
 export function JourneyShell({ children, wide, showNav }) {
   const pathname = usePathname();

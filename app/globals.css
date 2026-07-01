@@ -1659,3 +1659,418 @@ body {
 .appnav a:not(.active) .appnav__oracle--muted {
   color: var(--color-mistsoft);
 }
+
+/* ── Pracownia ── */
+.pracownia__head {
+  margin-bottom: 1.25rem;
+}
+
+.pracownia__kick {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-brass);
+  margin-bottom: 0.35rem;
+}
+
+.pracownia__title {
+  font-family: var(--font-spectral), serif;
+  font-size: 1.45rem;
+  font-weight: 500;
+  color: #ece6d8;
+  margin-bottom: 0.5rem;
+}
+
+.pracownia__lead {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-mist);
+}
+
+.pracownia__public-link {
+  margin-top: 0.75rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.8125rem;
+}
+
+.pracownia__public-link a,
+.pracownia-link {
+  color: var(--color-brass);
+  text-decoration: none;
+}
+
+.pracownia__public-link a:hover,
+.pracownia-link:hover {
+  text-decoration: underline;
+}
+
+.pracownia__error {
+  margin: 0.75rem 0;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.8125rem;
+  color: #cdd3ea;
+}
+
+.pracownia-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
+.pracownia-tabs button {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 182, 201, 0.14);
+  background: rgba(174, 182, 201, 0.05);
+  color: var(--color-mistsoft);
+  cursor: pointer;
+}
+
+.pracownia-tabs button.active {
+  background: var(--color-brass);
+  border-color: var(--color-brass);
+  color: #fff8ec;
+}
+
+.pracownia-section__actions {
+  margin-bottom: 1rem;
+}
+
+.pracownia-section__actions--pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pracownia-btn-secondary {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  padding: 0.65rem 1rem;
+  border-radius: 11px;
+  border: 1px solid rgba(126, 184, 168, 0.45);
+  background: rgba(126, 184, 168, 0.08);
+  color: #a8dcc8;
+  cursor: pointer;
+}
+
+.pracownia-btn-secondary:hover {
+  background: rgba(126, 184, 168, 0.14);
+}
+
+.pracownia-empty {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}
+
+.pracownia-empty__title {
+  font-family: var(--font-spectral), serif;
+  font-size: 1.05rem;
+  color: #ece6d8;
+  margin-bottom: 0.35rem;
+}
+
+.pracownia-empty__desc {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.8125rem;
+  color: var(--color-mistsoft);
+  line-height: 1.5;
+}
+
+.pracownia-section__title {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-mistsoft);
+  margin-bottom: 0.75rem;
+}
+
+.pracownia-notes,
+.pracownia-quotes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pracownia-note {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(174, 182, 201, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pracownia-note__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.45rem;
+}
+
+.pracownia-note__title {
+  font-family: var(--font-spectral), serif;
+  font-size: 1rem;
+  color: #ece6d8;
+  margin-bottom: 0.35rem;
+}
+
+.pracownia-note__body {
+  font-family: var(--font-spectral), serif;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #d8deea;
+  white-space: pre-wrap;
+}
+
+.pracownia-note__meta,
+.pracownia-uquote__meta {
+  margin-top: 0.5rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px;
+  color: var(--color-mistsoft);
+}
+
+.pracownia-note__shares,
+.pracownia-note__hint {
+  margin-top: 0.45rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  color: var(--color-mistsoft);
+}
+
+.pracownia-vis {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 182, 201, 0.18);
+  color: var(--color-mistsoft);
+}
+
+.pracownia-vis--quote {
+  margin-left: auto;
+}
+
+.pracownia-uquote {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border-left: 3px solid transparent;
+}
+
+.pracownia-uquote--found {
+  border-color: rgba(126, 184, 168, 0.55);
+  background: rgba(126, 184, 168, 0.06);
+}
+
+.pracownia-uquote--own {
+  border-color: rgba(196, 166, 122, 0.65);
+  background: rgba(196, 166, 122, 0.07);
+}
+
+.pracownia-uquote__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.pracownia-uquote__badge {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pracownia-uquote--found .pracownia-uquote__badge {
+  color: #7eb8a8;
+}
+
+.pracownia-uquote--own .pracownia-uquote__badge {
+  color: #c4a67a;
+}
+
+.pracownia-uquote__label {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-mistsoft);
+}
+
+.pracownia-uquote__text {
+  font-family: var(--font-spectral), serif;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  font-style: italic;
+  color: #ece6d8;
+  margin: 0;
+}
+
+.pracownia-uquote__attrib {
+  margin-top: 0.45rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.75rem;
+  color: var(--color-mistsoft);
+}
+
+.pracownia-uquote__public-hint {
+  opacity: 0.85;
+}
+
+.pracownia-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 0.65rem;
+}
+
+.pracownia-btn-ghost {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: none;
+  background: transparent;
+  color: var(--color-mistsoft);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pracownia-btn-ghost:hover {
+  color: var(--color-brass);
+}
+
+.pracownia-btn-ghost--danger:hover {
+  color: #d4a0a0;
+}
+
+.pracownia-form {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(174, 182, 201, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.pracownia-form__field {
+  display: block;
+  margin-bottom: 0.85rem;
+}
+
+.pracownia-form__label {
+  display: block;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-mistsoft);
+  margin-bottom: 0.35rem;
+}
+
+.pracownia-form__hint {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  color: var(--color-mistsoft);
+  line-height: 1.45;
+  margin-bottom: 0.5rem;
+}
+
+.pracownia-input,
+.pracownia-textarea {
+  width: 100%;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.875rem;
+  color: #ece6d8;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(174, 182, 201, 0.16);
+  border-radius: 9px;
+  padding: 0.55rem 0.65rem;
+}
+
+.pracownia-textarea {
+  font-family: var(--font-spectral), serif;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.pracownia-textarea--quote {
+  font-style: italic;
+}
+
+.pracownia-vis-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pracownia-vis-option {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12px;
+  color: var(--color-mist);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.pracownia-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.pracownia-share__chips {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pracownia-share__chip {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(174, 182, 201, 0.2);
+  background: rgba(174, 182, 201, 0.08);
+  color: #ece6d8;
+  cursor: pointer;
+}
+
+.pracownia-share__results {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+  border-radius: 9px;
+  border: 1px solid rgba(174, 182, 201, 0.12);
+  overflow: hidden;
+}
+
+.pracownia-share__pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.65rem;
+  border: none;
+  background: transparent;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.8125rem;
+  color: #ece6d8;
+  cursor: pointer;
+}
+
+.pracownia-share__pick:hover {
+  background: rgba(174, 182, 201, 0.08);
+}

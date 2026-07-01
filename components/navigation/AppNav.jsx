@@ -14,7 +14,8 @@ export const APP_PANELS = [
   { href: "/konstelacja", label: "Konstelacja", match: "/konstelacja" },
   { href: "/rozmowy", label: "Rozmowy", match: "/rozmowy" },
   { href: "/zielnik", label: "Zielnik", match: "/zielnik" },
-  { href: "/ludzie", label: "Pracownia", match: "/ludzie" },
+  { href: "/pracownia", label: "Pracownia", match: "/pracownia" },
+  { href: "/ludzie", label: "Spotkania", match: "/ludzie" },
   { href: "/moje-zapisy", label: "Moje zapisy", match: "/moje-zapisy" },
 ];
 
