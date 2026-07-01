@@ -23,7 +23,25 @@ import {
 } from "@/components/journey/JourneyShell";
 import { ShareQuoteButton } from "@/components/share/ShareQuoteButton";
 import { fetchOracleDrawStatus } from "@/lib/thresholdData";
-import { oracleDrawsWord } from "@/lib/oracleLimits";
+import {
+  oracleDrawsWord,
+  ORACLE_DAILY_LIMIT_DEFAULT,
+} from "@/lib/oracleLimits";
+
+function OracleLimitNotice({ className = "" }) {
+  return (
+    <p
+      className={`rounded-[10px] border border-mist/20 bg-black/20 px-3 py-2.5 font-sans text-xs leading-relaxed text-mistsoft ${className}`}
+    >
+      <span className="block font-medium text-mist">
+        Dzisiejszy limit wróżb wyczerpany ({ORACLE_DAILY_LIMIT_DEFAULT}{" "}
+        {oracleDrawsWord(ORACLE_DAILY_LIMIT_DEFAULT)} na dobę).
+      </span>
+      Wyrocznia milczy do jutra — kolejne losowanie po północy (czas
+      warszawski).
+    </p>
+  );
+}
 
 async function callOracle(odcisk, nastroj, pokazane) {
   const response = await fetch("/api/oracle", {
@@ -84,6 +102,18 @@ export function WyroczniaFlow() {
       }
     });
   }, [isAuthenticated, step]);
+
+  const oracleExhausted =
+    isAuthenticated && drawsRemaining !== null && drawsRemaining <= 0;
+
+  useEffect(() => {
+    if (!oracleExhausted) {
+      return;
+    }
+    if (step === "dicho") {
+      setStep("weigh");
+    }
+  }, [oracleExhausted, step]);
 
   useEffect(() => {
     if (step === "dicho" && di >= DICHO.length) {
@@ -296,7 +326,7 @@ export function WyroczniaFlow() {
   }
 
   if (step === "weigh") {
-    const exhausted = isAuthenticated && drawsRemaining === 0;
+    const exhausted = oracleExhausted;
 
     return (
       <JourneyShell>
@@ -309,6 +339,9 @@ export function WyroczniaFlow() {
               ? "Wyrocznia milczy do jutra."
               : "Wyrocznia waży twoje wybory…"}
           </p>
+          {exhausted ? (
+            <OracleLimitNotice className="mb-4 text-left" />
+          ) : null}
           {isAuthenticated && drawsRemaining !== null && drawsRemaining > 0 ? (
             <p className="mb-3 font-sans text-xs text-mistsoft">
               Zostały Ci dziś {drawsRemaining}{" "}
@@ -541,24 +574,28 @@ export function WyroczniaFlow() {
             <p className="mb-2 font-sans text-[10.5px] uppercase tracking-[0.16em] text-brassdeep">
               Dokąd dalej?
             </p>
+            {oracleExhausted ? (
+              <OracleLimitNotice className="mb-3 text-left" />
+            ) : null}
             {error ? (
               <p className="mb-2 font-sans text-xs text-[#cdd3ea]">{error}</p>
             ) : null}
             <button
               type="button"
-              disabled={
-                loading ||
-                (isAuthenticated && drawsRemaining !== null && drawsRemaining <= 0)
-              }
+              disabled={loading || oracleExhausted}
               onClick={async () => {
                 if (!current.v) return;
                 const nextMood = adjustMoodTowardQuote(mood, current.v);
                 setMood(nextMood);
                 await fetchQuote(nextMood);
               }}
-              className="mb-2 block w-full rounded-[11px] border border-brass/45 bg-brass/5 px-3 py-2.5 font-sans text-[13px] text-[#e6e0d2] transition-all duration-150 hover:border-brass hover:bg-brass/15 disabled:opacity-50"
+              className="mb-2 block w-full rounded-[11px] border border-brass/45 bg-brass/5 px-3 py-2.5 font-sans text-[13px] text-[#e6e0d2] transition-all duration-150 hover:border-brass hover:bg-brass/15 disabled:cursor-not-allowed disabled:opacity-55"
             >
-              {loading ? "Szukam…" : "jeszcze w tym tonie"}
+              {loading
+                ? "Szukam…"
+                : oracleExhausted
+                  ? "jeszcze w tym tonie — dostępne jutro"
+                  : "jeszcze w tym tonie"}
             </button>
             <button
               type="button"
@@ -570,10 +607,19 @@ export function WyroczniaFlow() {
             <button
               type="button"
               onClick={() => router.push("/konstelacja")}
-              className="block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
+              className="mb-2 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
             >
               zobacz konstelację
             </button>
+            {oracleExhausted ? (
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
+              >
+                wróć na Próg
+              </button>
+            ) : null}
           </div>
         </JourneyCard>
       </JourneyShell>
