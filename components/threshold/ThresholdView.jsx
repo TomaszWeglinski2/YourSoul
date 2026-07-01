@@ -102,7 +102,7 @@ export function ThresholdView() {
 
   if (authLoading || !ready || loading) {
     return (
-      <JourneyShell showNav>
+      <JourneyShell showNav={false}>
         <JourneyCard dark>
           <p className="font-sans text-sm italic text-mistsoft">
             Próg się rozświetla…
@@ -125,7 +125,7 @@ export function ThresholdView() {
     Boolean(snapshot?.lastVisitAt) && (newResonances > 0 || unread > 0);
 
   return (
-    <JourneyShell showNav wide>
+    <JourneyShell showNav={false} wide>
       <div className="threshold">
         <header className="threshold__head">
           <p className="threshold__kick">Próg</p>

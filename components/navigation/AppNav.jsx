@@ -9,18 +9,27 @@ import { fetchUnreadConversationCount } from "@/lib/conversationData";
 import { formatOracleNavBadge } from "@/lib/oracleLimits";
 
 export const APP_PANELS = [
+  { href: "/", label: "Próg", match: "/" },
   { href: "/wyrocznia", label: "Wyrocznia", match: "/wyrocznia" },
   { href: "/konstelacja", label: "Konstelacja", match: "/konstelacja" },
   { href: "/rozmowy", label: "Rozmowy", match: "/rozmowy" },
   { href: "/zielnik", label: "Zielnik", match: "/zielnik" },
+  { href: "/ludzie", label: "Pracownia", match: "/ludzie" },
   { href: "/moje-zapisy", label: "Moje zapisy", match: "/moje-zapisy" },
 ];
 
+export function isPanelActive(pathname, match) {
+  if (match === "/") {
+    return pathname === "/";
+  }
+  return pathname === match || pathname.startsWith(`${match}/`);
+}
+
 export function isAppPanelPath(pathname) {
-  if (pathname === "/" || pathname.startsWith("/rozmowa/")) {
+  if (pathname.startsWith("/rozmowa/")) {
     return true;
   }
-  return APP_PANELS.some((panel) => pathname === panel.match);
+  return APP_PANELS.some((panel) => isPanelActive(pathname, panel.match));
 }
 
 export function AppNav() {
@@ -58,8 +67,7 @@ export function AppNav() {
   return (
     <nav className="appnav" aria-label="Panele aplikacji">
       {APP_PANELS.map((panel) => {
-        const active =
-          pathname === panel.match || pathname.startsWith(`${panel.match}/`);
+        const active = isPanelActive(pathname, panel.match);
         const showUnreadBadge = panel.href === "/rozmowy" && unread > 0;
         const isOracle = panel.href === "/wyrocznia";
         const oracleBadge =

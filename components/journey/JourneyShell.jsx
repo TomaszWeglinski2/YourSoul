@@ -13,7 +13,7 @@ export function JourneyShell({ children, wide, showNav }) {
   const router = useRouter();
   const { resetJourney } = useJourney();
   const { user, signOut, loading, displayName } = useAuth();
-  const showAppNav = showNav ?? isAppPanelPath(pathname);
+  const showAppNav = Boolean(user) && (showNav ?? isAppPanelPath(pathname));
   const isWide = wide ?? WIDE_PANELS.has(pathname);
 
   function handleReset() {
