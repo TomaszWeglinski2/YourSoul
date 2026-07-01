@@ -12,9 +12,11 @@ import { MatchesSection } from "@/components/admin/MatchesSection";
 import { ReferralsSection } from "@/components/admin/ReferralsSection";
 import { QualitySection } from "@/components/admin/QualitySection";
 import { QuotesSection } from "@/components/admin/QuotesSection";
+import { SubmissionsSection } from "@/components/admin/SubmissionsSection";
 
 const TABS = [
   { id: "quotes", label: "Cytaty" },
+  { id: "submissions", label: "Zgłoszenia" },
   { id: "glosses", label: "Glosy" },
   { id: "towers", label: "Wieże" },
   { id: "przesilenie", label: "Przesilenia" },
@@ -138,6 +140,10 @@ export function AdminPanel() {
       </nav>
 
       {tab === "quotes" ? <QuotesSection password={password} /> : null}
+
+      {tab === "submissions" ? (
+        <SubmissionsSection password={password} />
+      ) : null}
 
       {tab === "quality" ? <QualitySection password={password} /> : null}
 

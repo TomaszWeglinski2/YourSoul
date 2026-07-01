@@ -1927,6 +1927,26 @@ body {
   opacity: 0.85;
 }
 
+.pracownia-uquote__submission {
+  margin-top: 0.45rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  color: var(--color-mistsoft);
+  line-height: 1.45;
+}
+
+.pracownia-btn-ghost--submit {
+  color: #7eb8a8;
+}
+
+.pracownia-btn-ghost--submit:hover {
+  color: #a8dcc8;
+}
+
+.pracownia-form--submit {
+  border-color: rgba(126, 184, 168, 0.25);
+}
+
 .pracownia-card-actions {
   display: flex;
   gap: 10px;

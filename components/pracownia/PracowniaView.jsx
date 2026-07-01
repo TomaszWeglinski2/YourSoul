@@ -7,6 +7,12 @@ import { NoteCard } from "@/components/pracownia/NoteCard";
 import { UserQuoteCard } from "@/components/pracownia/UserQuoteCard";
 import { BrassButton, JourneyCard, JourneyShell } from "@/components/journey/JourneyShell";
 import { useAuth } from "@/context/AuthContext";
+import { SubmitQuoteForm } from "@/components/pracownia/SubmitQuoteForm";
+import {
+  fetchMyQuoteSubmissions,
+  fetchSubmissionQuota,
+} from "@/lib/quoteSubmissionData";
+import { MONTHLY_SUBMISSION_LIMIT } from "@/lib/quoteSubmissionUtils";
 import {
   createNote,
   createUserQuote,
@@ -298,14 +304,29 @@ export function PracowniaView() {
   const [quoteMode, setQuoteMode] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [editingQuote, setEditingQuote] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [submissionQuota, setSubmissionQuota] = useState(null);
+  const [submittingQuote, setSubmittingQuote] = useState(null);
+
+  const submissionByQuoteId = useMemo(() => {
+    const map = new Map();
+    for (const row of submissions) {
+      if (row.user_quote_id != null && !map.has(row.user_quote_id)) {
+        map.set(row.user_quote_id, row);
+      }
+    }
+    return map;
+  }, [submissions]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
 
-    const [notesRes, quotesRes] = await Promise.all([
+    const [notesRes, quotesRes, subsRes, quotaRes] = await Promise.all([
       fetchMyNotes(),
       fetchMyUserQuotes(),
+      fetchMyQuoteSubmissions(),
+      fetchSubmissionQuota(),
     ]);
 
     const errors = [];
@@ -330,6 +351,18 @@ export function PracowniaView() {
       setQuotes([]);
     } else {
       setQuotes(quotesRes.quotes);
+    }
+
+    if (!subsRes.ok) {
+      setSubmissions([]);
+    } else {
+      setSubmissions(subsRes.submissions);
+    }
+
+    if (quotaRes.ok) {
+      setSubmissionQuota(quotaRes.used);
+    } else {
+      setSubmissionQuota(null);
     }
 
     if (errors.length) {
@@ -542,7 +575,30 @@ export function PracowniaView() {
 
         {tab === "cytaty" ? (
           <section className="pracownia-section">
-            {quoteMode ? (
+            {submissionQuota !== null ? (
+              <p className="pracownia-form__hint mb-3">
+                Zgłoszenia do korpusu w tym miesiącu: {submissionQuota}/
+                {MONTHLY_SUBMISSION_LIMIT}
+              </p>
+            ) : null}
+
+            {submittingQuote ? (
+              <SubmitQuoteForm
+                initial={{
+                  text: submittingQuote.text,
+                  author: submittingQuote.author,
+                  source: submittingQuote.source,
+                }}
+                userQuoteId={submittingQuote.id}
+                onCancel={() => setSubmittingQuote(null)}
+                onSuccess={() => {
+                  setSubmittingQuote(null);
+                  void load();
+                }}
+              />
+            ) : null}
+
+            {quoteMode && !submittingQuote ? (
               <QuoteEditor
                 kind={quoteMode}
                 initial={editingQuote ?? undefined}
@@ -553,7 +609,7 @@ export function PracowniaView() {
                 }}
                 onSave={handleSaveQuote}
               />
-            ) : (
+            ) : !submittingQuote ? (
               <div className="pracownia-section__actions pracownia-section__actions--pair">
                 <BrassButton
                   className="mt-0 w-auto px-5"
@@ -575,7 +631,7 @@ export function PracowniaView() {
                   napisz własny aforyzm
                 </button>
               </div>
-            )}
+            ) : null}
 
             {quotes.length === 0 && !quoteMode ? (
               <div className="pracownia-empty">
@@ -593,11 +649,21 @@ export function PracowniaView() {
                       <UserQuoteCard
                         quote={quote}
                         ownerNick={displayName ?? "ty"}
+                        submission={submissionByQuoteId.get(quote.id)}
                         onEdit={() => {
                           setEditingQuote(quote);
                           setQuoteMode(quote.kind);
                         }}
                         onDelete={() => handleDeleteQuote(quote)}
+                        onSubmitToWyrocznia={
+                          quote.kind === "found"
+                            ? () => {
+                                setSubmittingQuote(quote);
+                                setQuoteMode(null);
+                                setEditingQuote(null);
+                              }
+                            : undefined
+                        }
                       />
                     </li>
                   )

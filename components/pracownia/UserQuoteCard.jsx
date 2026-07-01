@@ -1,13 +1,16 @@
 "use client";
 
 import { formatRelativeTime } from "@/lib/savesLibraryUtils";
+import { SUBMISSION_STATUS_LABELS } from "@/lib/quoteSubmissionUtils";
 
 export function UserQuoteCard({
   quote,
   ownerNick,
   readOnly = false,
+  submission,
   onEdit,
   onDelete,
+  onSubmitToWyrocznia,
 }) {
   const isOwn = quote.kind === "own";
   const label = isOwn
@@ -50,8 +53,30 @@ export function UserQuoteCard({
         ) : null}
       </p>
 
-      {!readOnly && (onEdit || onDelete) ? (
+      {!readOnly && submission ? (
+        <p className="pracownia-uquote__submission">
+          Zgłoszenie do Wyroczni:{" "}
+          {SUBMISSION_STATUS_LABELS[submission.status] ?? submission.status}
+          {submission.status === "rejected" && submission.reviewer_note
+            ? ` — ${submission.reviewer_note}`
+            : null}
+          {submission.status === "accepted" && submission.accepted_quote_id
+            ? ` (cytat #${submission.accepted_quote_id})`
+            : null}
+        </p>
+      ) : null}
+
+      {!readOnly && (onEdit || onDelete || onSubmitToWyrocznia) ? (
         <div className="pracownia-card-actions">
+          {!isOwn && onSubmitToWyrocznia && !submission ? (
+            <button
+              type="button"
+              className="pracownia-btn-ghost pracownia-btn-ghost--submit"
+              onClick={onSubmitToWyrocznia}
+            >
+              zgłoś do Wyroczni
+            </button>
+          ) : null}
           {onEdit ? (
             <button type="button" className="pracownia-btn-ghost" onClick={onEdit}>
               edytuj
