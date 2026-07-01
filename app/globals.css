@@ -1481,3 +1481,181 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ——— Próg (strona startowa) ——— */
+@keyframes thresholdOracleGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(196, 153, 90, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 28px 2px rgba(196, 153, 90, 0.16);
+  }
+}
+
+.threshold {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.threshold__head {
+  padding: 4px 2px 8px;
+}
+
+.threshold__kick {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-brass);
+  margin-bottom: 8px;
+}
+
+.threshold__title {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 4vw, 28px);
+  font-weight: 500;
+  color: #ece6d8;
+  margin: 0 0 8px;
+}
+
+.threshold__since {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-mistsoft);
+  margin: 0;
+}
+
+.threshold__error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-tension);
+}
+
+.threshold-oracle {
+  display: block;
+  border-radius: 14px;
+  padding: 20px 18px;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.threshold-oracle--live {
+  border: 1px solid rgba(196, 153, 90, 0.45);
+  background: radial-gradient(
+    120% 100% at 50% 0%,
+    rgba(196, 153, 90, 0.12) 0%,
+    rgba(27, 34, 54, 0.9) 55%,
+    rgba(17, 21, 31, 0.95) 100%
+  );
+  animation: thresholdOracleGlow 5s ease-in-out infinite;
+}
+
+.threshold-oracle--live:hover {
+  border-color: rgba(196, 153, 90, 0.65);
+}
+
+.threshold-oracle--quiet {
+  border: 1px solid rgba(174, 182, 201, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  cursor: default;
+  opacity: 0.72;
+}
+
+.threshold-oracle__label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-brass);
+  margin: 0 0 8px;
+}
+
+.threshold-oracle__lead {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.4;
+  color: #ece6d8;
+  margin: 0 0 8px;
+}
+
+.threshold-oracle__lead--muted {
+  color: var(--color-mistsoft);
+}
+
+.threshold-oracle__cta {
+  font-size: 12px;
+  color: var(--color-brass);
+  margin: 0;
+}
+
+.threshold-oracle__cta--muted {
+  color: var(--color-mistsoft);
+}
+
+.threshold-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .threshold-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.threshold-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 11px;
+  border: 1px solid rgba(174, 182, 201, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px 13px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.threshold-tile:hover {
+  border-color: rgba(196, 153, 90, 0.28);
+  background: rgba(196, 153, 90, 0.06);
+}
+
+.threshold-tile__label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: #ece6d8;
+}
+
+.threshold-tile__hint {
+  font-size: 11px;
+  color: var(--color-mistsoft);
+}
+
+.appnav__label-with-oracle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.appnav__oracle {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #fff8ec;
+  opacity: 0.95;
+}
+
+.appnav__oracle--muted {
+  color: var(--color-mistsoft);
+  opacity: 0.75;
+  font-size: 10px;
+}
+
+.appnav a:not(.active) .appnav__oracle {
+  color: var(--color-brass);
+}
+
+.appnav a:not(.active) .appnav__oracle--muted {
+  color: var(--color-mistsoft);
+}

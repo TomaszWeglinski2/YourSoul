@@ -31,7 +31,7 @@ export function WrotaStep2() {
       await upsertProfile({ worlds, odcisk });
     }
 
-    router.push("/wyrocznia");
+    router.push("/");
   }
 
   return (

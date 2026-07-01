@@ -33,7 +33,7 @@ export function AuthForm({ mode = "login" }) {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const returnTo = searchParams.get("next") ?? "/wrota";
+  const returnTo = searchParams.get("next") ?? "/";
   const inviteFromUrl = searchParams.get("invite") ?? "";
   const isRegister = mode === "register";
 

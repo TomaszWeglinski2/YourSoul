@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { fetchOracleDrawStatus } from "@/lib/thresholdData";
 import { fetchUnreadConversationCount } from "@/lib/conversationData";
+import { formatOracleNavBadge } from "@/lib/oracleLimits";
 
 export const APP_PANELS = [
   { href: "/wyrocznia", label: "Wyrocznia", match: "/wyrocznia" },
@@ -15,7 +17,7 @@ export const APP_PANELS = [
 ];
 
 export function isAppPanelPath(pathname) {
-  if (pathname.startsWith("/rozmowa/")) {
+  if (pathname === "/" || pathname.startsWith("/rozmowa/")) {
     return true;
   }
   return APP_PANELS.some((panel) => pathname === panel.match);
@@ -25,17 +27,26 @@ export function AppNav() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [unread, setUnread] = useState(0);
+  const [oracleRemaining, setOracleRemaining] = useState(null);
 
   useEffect(() => {
     if (loading || !user) {
       setUnread(0);
+      setOracleRemaining(null);
       return;
     }
 
     let cancelled = false;
+
     void fetchUnreadConversationCount().then((result) => {
       if (!cancelled && result.ok) {
         setUnread(result.count ?? 0);
+      }
+    });
+
+    void fetchOracleDrawStatus().then((result) => {
+      if (!cancelled && result.ok) {
+        setOracleRemaining(Number(result.status?.remaining ?? 0));
       }
     });
 
@@ -49,7 +60,12 @@ export function AppNav() {
       {APP_PANELS.map((panel) => {
         const active =
           pathname === panel.match || pathname.startsWith(`${panel.match}/`);
-        const showBadge = panel.href === "/rozmowy" && unread > 0;
+        const showUnreadBadge = panel.href === "/rozmowy" && unread > 0;
+        const isOracle = panel.href === "/wyrocznia";
+        const oracleBadge =
+          isOracle && oracleRemaining !== null
+            ? formatOracleNavBadge(oracleRemaining)
+            : null;
 
         return (
           <Link
@@ -58,8 +74,21 @@ export function AppNav() {
             className={active ? "active" : undefined}
             aria-current={active ? "page" : undefined}
           >
-            {panel.label}
-            {showBadge ? (
+            {isOracle && oracleBadge ? (
+              <span className="appnav__label-with-oracle">
+                <span>Wyrocznia</span>
+                <span
+                  className={`appnav__oracle ${
+                    oracleRemaining === 0 ? "appnav__oracle--muted" : ""
+                  }`}
+                >
+                  {oracleBadge}
+                </span>
+              </span>
+            ) : (
+              panel.label
+            )}
+            {showUnreadBadge ? (
               <span className="appnav__badge" aria-label={`${unread} nowych`}>
                 {unread > 9 ? "9+" : unread}
               </span>

@@ -8,12 +8,12 @@ import { AppNav, isAppPanelPath } from "@/components/navigation/AppNav";
 
 const WIDE_PANELS = new Set(["/moje-zapisy", "/zielnik"]);
 
-export function JourneyShell({ children, wide }) {
+export function JourneyShell({ children, wide, showNav }) {
   const pathname = usePathname();
   const router = useRouter();
   const { resetJourney } = useJourney();
   const { user, signOut, loading, displayName } = useAuth();
-  const showAppNav = isAppPanelPath(pathname);
+  const showAppNav = showNav ?? isAppPanelPath(pathname);
   const isWide = wide ?? WIDE_PANELS.has(pathname);
 
   function handleReset() {

@@ -22,6 +22,8 @@ import {
   JourneyShell,
 } from "@/components/journey/JourneyShell";
 import { ShareQuoteButton } from "@/components/share/ShareQuoteButton";
+import { fetchOracleDrawStatus } from "@/lib/thresholdData";
+import { oracleDrawsWord } from "@/lib/oracleLimits";
 
 async function callOracle(odcisk, nastroj, pokazane) {
   const response = await fetch("/api/oracle", {
@@ -68,6 +70,20 @@ export function WyroczniaFlow() {
   const [publicMargins, setPublicMargins] = useState([]);
   const [reactedMarginIds, setReactedMarginIds] = useState(new Set());
   const [chorusLoading, setChorusLoading] = useState(false);
+  const [drawsRemaining, setDrawsRemaining] = useState(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setDrawsRemaining(null);
+      return;
+    }
+
+    void fetchOracleDrawStatus().then((result) => {
+      if (result.ok) {
+        setDrawsRemaining(Number(result.status?.remaining ?? 0));
+      }
+    });
+  }, [isAuthenticated, step]);
 
   useEffect(() => {
     if (step === "dicho" && di >= DICHO.length) {
@@ -195,13 +211,24 @@ export function WyroczniaFlow() {
         setMarginPublic(false);
         setSaveWarning("");
         setStep("quote");
+        if (data.draws?.remaining !== undefined) {
+          setDrawsRemaining(Number(data.draws.remaining));
+        } else if (isAuthenticated) {
+          const status = await fetchOracleDrawStatus();
+          if (status.ok) {
+            setDrawsRemaining(Number(status.status?.remaining ?? 0));
+          }
+        }
       } catch (err) {
+        if (err.message?.includes("limit wróżb")) {
+          setDrawsRemaining(0);
+        }
         setError(err.message);
       } finally {
         setLoading(false);
       }
     },
-    [odcisk, mood, shown, setCurrentQuote, addToShown]
+    [odcisk, mood, shown, setCurrentQuote, addToShown, isAuthenticated]
   );
 
   useEffect(() => {
@@ -269,6 +296,8 @@ export function WyroczniaFlow() {
   }
 
   if (step === "weigh") {
+    const exhausted = isAuthenticated && drawsRemaining === 0;
+
     return (
       <JourneyShell>
         <JourneyCard dark className="text-center">
@@ -276,18 +305,36 @@ export function WyroczniaFlow() {
             Wyrocznia
           </p>
           <p className="my-[18px] font-serif text-lg italic text-[#ece6d8]">
-            Wyrocznia waży twoje wybory…
+            {exhausted
+              ? "Wyrocznia milczy do jutra."
+              : "Wyrocznia waży twoje wybory…"}
           </p>
+          {isAuthenticated && drawsRemaining !== null && drawsRemaining > 0 ? (
+            <p className="mb-3 font-sans text-xs text-mistsoft">
+              Zostały Ci dziś {drawsRemaining}{" "}
+              {oracleDrawsWord(drawsRemaining)}.
+            </p>
+          ) : null}
           {error ? (
             <p className="mb-3 font-sans text-xs text-[#cdd3ea]">{error}</p>
           ) : null}
-          <BrassButton
-            disabled={loading}
-            onClick={() => fetchQuote()}
-            className="mt-0"
-          >
-            {loading ? "Szukam słowa…" : "Odsłoń słowo"}
-          </BrassButton>
+          {exhausted ? (
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="mt-0 block w-full rounded-[11px] border border-mist/30 bg-transparent px-3 py-2.5 font-sans text-[13px] text-mistsoft transition-all duration-150 hover:border-mist/50 hover:bg-mist/10"
+            >
+              wróć na Próg
+            </button>
+          ) : (
+            <BrassButton
+              disabled={loading}
+              onClick={() => fetchQuote()}
+              className="mt-0"
+            >
+              {loading ? "Szukam słowa…" : "Odsłoń słowo"}
+            </BrassButton>
+          )}
         </JourneyCard>
       </JourneyShell>
     );
@@ -499,7 +546,10 @@ export function WyroczniaFlow() {
             ) : null}
             <button
               type="button"
-              disabled={loading}
+              disabled={
+                loading ||
+                (isAuthenticated && drawsRemaining !== null && drawsRemaining <= 0)
+              }
               onClick={async () => {
                 if (!current.v) return;
                 const nextMood = adjustMoodTowardQuote(mood, current.v);
