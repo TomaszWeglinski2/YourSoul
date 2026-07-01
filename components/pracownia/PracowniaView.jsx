@@ -308,25 +308,34 @@ export function PracowniaView() {
       fetchMyUserQuotes(),
     ]);
 
-    if (!notesRes.ok || !quotesRes.ok) {
-      setError(notesRes.error ?? quotesRes.error ?? "Nie udało się wczytać Pracowni.");
+    const errors = [];
+    if (!notesRes.ok) {
+      errors.push(notesRes.error ?? "Nie udało się wczytać myśli.");
       setNotes([]);
-      setQuotes([]);
-      setLoading(false);
-      return;
+      setShareMap({});
+    } else {
+      setNotes(notesRes.notes);
+      const sharedNotes = notesRes.notes.filter((n) => n.visibility === "shared");
+      const shareEntries = await Promise.all(
+        sharedNotes.map(async (note) => {
+          const res = await fetchNoteShareNicks(note.id);
+          return [note.id, res.ok ? res.shares : []];
+        })
+      );
+      setShareMap(Object.fromEntries(shareEntries));
     }
 
-    setNotes(notesRes.notes);
-    setQuotes(quotesRes.quotes);
+    if (!quotesRes.ok) {
+      errors.push(quotesRes.error ?? "Nie udało się wczytać cytatów.");
+      setQuotes([]);
+    } else {
+      setQuotes(quotesRes.quotes);
+    }
 
-    const sharedNotes = notesRes.notes.filter((n) => n.visibility === "shared");
-    const shareEntries = await Promise.all(
-      sharedNotes.map(async (note) => {
-        const res = await fetchNoteShareNicks(note.id);
-        return [note.id, res.ok ? res.shares : []];
-      })
-    );
-    setShareMap(Object.fromEntries(shareEntries));
+    if (errors.length) {
+      setError(errors.join(" "));
+    }
+
     setLoading(false);
   }, []);
 
